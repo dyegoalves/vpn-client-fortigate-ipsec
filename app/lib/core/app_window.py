@@ -6,12 +6,14 @@ from PyQt5.QtCore import Qt, QTimer
 
 # Importar usando imports absolutos ou relativos dependendo do contexto
 try:
-    from ..config.config import ICON_PATH, get_auth_helper_path
+    from ..config.config import ICON_PATH
+    from ..config.paths import get_auth_helper_path
     from ..ui.widgets import ToggleSwitch
     from .worker import VpnWorker
 except ImportError:
     # Quando rodando em modo desenvolvimento com PYTHONPATH apropriado
-    from config.config import ICON_PATH, get_auth_helper_path
+    from config.config import ICON_PATH
+    from config.paths import get_auth_helper_path
     from ui.widgets import ToggleSwitch
     from core.worker import VpnWorker
 
@@ -40,34 +42,17 @@ class VpnGui(QWidget):
 
     def start_helper_process(self):
         """Inicia o processo helper com privilégios de root via pkexec."""
+        # Importar dentro da função para evitar problemas de importação circular
+        # Usar import absoluto ou relativo dependendo do contexto
         try:
-            command = ["pkexec", sys.executable, HELPER_PATH, "--run-as-helper"]
-            self.helper_process = subprocess.Popen(
-                command, 
-                stdin=subprocess.PIPE, 
-                stdout=subprocess.PIPE,
-                stderr=subprocess.PIPE, 
-                text=True, 
-                bufsize=1
-            )
-            # Se o processo terminar imediatamente, houve um erro (ex: senha errada)
-            if self.helper_process.poll() is not None:
-                error_output = self.helper_process.stderr.read()
-                raise Exception(f"Falha ao iniciar o helper com pkexec. Erro: {error_output.strip()}")
+            # Tenta import relativo primeiro
+            from .auth import authenticate_and_start_helper
+        except ImportError:
+            # Quando rodando em modo desenvolvimento com PYTHONPATH apropriado
+            from core.auth import authenticate_and_start_helper
             
-            # Verificar se o helper está respondendo corretamente com uma operação de teste
-            if not self._test_helper_authentication():
-                raise Exception("Falha na autenticação: Não foi possível verificar permissões adequadas")
-                
-            return True
-        except Exception as e:
-            QMessageBox.critical(self, "Erro de Autenticação",
-                                 "Falha na autenticação.\n"
-                                 "Forneça credenciais válidas de administrador.\n\n"
-                                 "O aplicativo precisa de privilégios elevados para gerenciar\n"
-                                 "conexões de rede e o serviço IPsec.\n\n"
-                                 f"Erro: {str(e)}")
-            return False
+        self.helper_process = authenticate_and_start_helper()
+        return self.helper_process is not None
 
     def is_fully_authenticated(self):
         """Verifica se o helper está completamente autenticado e operacional."""
@@ -237,14 +222,12 @@ class VpnGui(QWidget):
                 try:
                     self.helper_process.stdin.write("quit\n")
                     self.helper_process.stdin.flush()
-                    self.helper_process.terminate()
-                    self.helper_process.wait(timeout=2)
-                except (subprocess.TimeoutExpired, IOError, BrokenPipeError):
-                    if self.helper_process.poll() is None:
-                        self.helper_process.kill()
-                        self.helper_process.wait()
-                except Exception:
-                    pass # Ignora outros erros no cleanup
+                    self.helper_process.stdin.close()  # Fechar stdin
+                    self.helper_process.stdout.close()  # Fechar stdout
+                except (IOError, BrokenPipeError):
+                    pass
+                # Não tentamos terminar o processo diretamente devido a problemas de permissão
+                # quando o processo está rodando com privilégios elevados
 
     def init_ui(self):
         """Inicializa a interface do usuário."""

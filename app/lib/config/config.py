@@ -1,42 +1,17 @@
 import os
+from .paths import is_dev_environment, get_dev_script_path, get_installed_script_path, get_auth_helper_path
 
 # --- Configurações Globais ---
 VPN_NAME = "fortigate-vpn"
 
 
-# Função para obter o caminho do helper dinamicamente
 def get_helper_path():
-    # Caminho do script vpn-gui.py em desenvolvimento
-    # Vamos construir o caminho de forma mais robusta
-    current_script_dir = os.path.dirname(os.path.abspath(__file__))  # app/lib/config/
-    lib_dir = os.path.dirname(current_script_dir)  # app/lib/
-    project_dir = os.path.dirname(lib_dir)  # app/
-    bin_dir = os.path.join(project_dir, "bin")  # app/bin/
-    dev_script_path = os.path.join(bin_dir, "vpn-gui.py")  # app/bin/vpn-gui.py
-    
-    # Verificar se o script existe no ambiente de desenvolvimento
-    if os.path.exists(dev_script_path):
-        return dev_script_path
+    """Obtém o caminho do helper para execução normal."""
+    if is_dev_environment():
+        return get_dev_script_path()
     else:
-        # Modo instalado
+        # Modo instalado - caminho do wrapper shell
         return "/usr/bin/vpn-gui"
-
-# Função para obter o caminho do script Python para autenticação via pkexec
-def get_auth_helper_path():
-    # Caminho do script vpn-gui.py em desenvolvimento
-    current_script_dir = os.path.dirname(os.path.abspath(__file__))  # app/lib/config/
-    lib_dir = os.path.dirname(current_script_dir)  # app/lib/
-    project_dir = os.path.dirname(lib_dir)  # app/
-    bin_dir = os.path.join(project_dir, "bin")  # app/bin/
-    dev_script_path = os.path.join(bin_dir, "vpn-gui.py")  # app/bin/vpn-gui.py
-    
-    # Verificar se o script existe no ambiente de desenvolvimento
-    if os.path.exists(dev_script_path):
-        return dev_script_path
-    else:
-        # Modo instalado - usar o script Python diretamente em vez do wrapper shell
-        return "/usr/lib/vpn-client-fortigate/vpn-gui.py"
-
 
 # O caminho do helper será resolvido dinamicamente quando necessário
 # Não armazenamos em uma variável global para permitir resolução em tempo de execução

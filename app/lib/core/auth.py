@@ -1,20 +1,23 @@
-
 import sys
 import subprocess
 from PyQt5.QtWidgets import QMessageBox
-
-try:
-    from ..config.config import get_helper_path
-except ImportError:
-    from config.config import get_helper_path
-
-HELPER_PATH = get_helper_path()
 
 def authenticate_and_start_helper():
     """
     Tenta autenticar usando pkexec e iniciar o processo helper.
     Retorna o processo se for bem-sucedido, caso contrário, None.
     """
+    # Importar dentro da função para evitar problemas de importação circular
+    # Usar import absoluto ou relativo dependendo do contexto
+    try:
+        # Tenta import relativo primeiro
+        from ..config.paths import get_auth_helper_path
+    except (ImportError, ValueError):
+        # Quando rodando em modo desenvolvimento com PYTHONPATH apropriado
+        from config.paths import get_auth_helper_path
+    
+    HELPER_PATH = get_auth_helper_path()
+    
     try:
         command = ["pkexec", sys.executable, HELPER_PATH, "--run-as-helper"]
         helper_process = subprocess.Popen(

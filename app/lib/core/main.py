@@ -27,8 +27,21 @@ def main():
             # Quando rodando em modo desenvolvimento com PYTHONPATH apropriado
             from core.app_window import VpnGui
             
+        # Primeiro, verificar autenticação antes de abrir a GUI
         app = QApplication(sys.argv)
-        gui = VpnGui()
+        
+        # Testar a autenticação antes de exibir a GUI
+        test_gui = VpnGui()
+        
+        # Verificar se o helper foi iniciado e está respondendo corretamente
+        if not test_gui.helper_process or not test_gui._is_helper_authenticated():
+            # A autenticação falhou ou o helper não responde
+            test_gui.close()
+            # A mensagem de erro já foi exibida por start_helper_process
+            return  # Sair sem abrir a GUI principal
+        
+        # Se a autenticação for bem-sucedida, continuar com a GUI normal
+        gui = test_gui  # Reutilizar a instância que já passou pela autenticação
         
         # Conecta o sinal aboutToQuit ao método de limpeza da GUI
         app.aboutToQuit.connect(gui.cleanup)

@@ -32,9 +32,9 @@ class VpnGui(QWidget):
         self.init_ui()
         
         if not self.start_helper_process():
-            # Se o helper não iniciar, fecha a aplicação após o erro ser mostrado.
-            # Usamos QTimer para garantir que a janela seja criada antes de fechá-la.
-            QTimer.singleShot(100, self.close)
+            # Se o helper não iniciar devido a problemas de autenticação,
+            # fecha imediatamente a aplicação
+            self.close()
         else:
             self.check_status()
 
@@ -54,19 +54,88 @@ class VpnGui(QWidget):
             if self.helper_process.poll() is not None:
                 error_output = self.helper_process.stderr.read()
                 raise Exception(f"Falha ao iniciar o helper com pkexec. Erro: {error_output.strip()}")
+            
+            # Verificar se o helper está respondendo corretamente com uma operação de teste
+            if not self._test_helper_authentication():
+                raise Exception("Falha na autenticação: Não foi possível verificar permissões adequadas")
+                
             return True
         except Exception as e:
             QMessageBox.critical(self, "Erro de Autenticação",
                                  "A autenticação é necessária para gerenciar a VPN.\n"
-                                 "Por favor, insira sua senha quando solicitado para continuar.\n\n"
-                                 f"Detalhe do erro: {e}")
+                                 "Por favor, insira sua senha de administrador quando solicitado.\n\n"
+                                 f"Detalhe do erro: {str(e)}\n\n"
+                                 "Certifique-se de que tem permissões adequadas para executar operações de rede.")
+            return False
+
+    def is_fully_authenticated(self):
+        """Verifica se o helper está completamente autenticado e operacional."""
+        try:
+            if not self.helper_process or self.helper_process.poll() is not None:
+                return False
+            
+            # Envia comando de teste e verifica resposta
+            self.helper_process.stdin.write("status\n")
+            self.helper_process.stdin.flush()
+            
+            response = self.helper_process.stdout.readline().strip()
+            
+            # A resposta pode ser qualquer coisa, desde que seja uma resposta válida
+            return response is not None and response != ""
+        except:
+            return False
+
+    def _test_helper_authentication(self):
+        """Testa se o helper está respondendo corretamente e tem permissões adequadas."""
+        try:
+            # Envia um comando de teste para verificar a autenticação
+            self.helper_process.stdin.write("status\n")
+            self.helper_process.stdin.flush()
+            
+            # Lê a resposta com timeout
+            import select
+            response = self.helper_process.stdout.readline().strip()
+            
+            # Se recebermos uma resposta válida, consideramos a autenticação bem-sucedida
+            return response != ""
+        except:
             return False
 
     def run_command(self, command, on_finish):
         """Inicia o worker para executar um comando em segundo plano."""
+        # Verifica se o helper ainda está autenticado antes de executar o comando
+        if not self._is_helper_authenticated():
+            # Tenta reiniciar o helper com autenticação
+            if not self.start_helper_process():
+                # Se não conseguir reiniciar, exibe erro e desativa o toggle
+                QMessageBox.critical(self, "Erro de Autenticação",
+                                     "A autenticação expirou ou foi revogada.\n"
+                                     "Por favor, feche e reabra o aplicativo para se autenticar novamente.\n\n"
+                                     "Você precisará fornecer suas credenciais de administrador.")
+                self.toggle_switch.setEnabled(False)
+                return
+        
         self.worker = VpnWorker(self.helper_process, command)
         self.worker.result_ready.connect(on_finish)
         self.worker.start()
+        
+    def _is_helper_authenticated(self):
+        """Verifica se o helper ainda está autenticado e respondendo."""
+        try:
+            if not self.helper_process or self.helper_process.poll() is not None:
+                return False
+            
+            # Envia um comando de teste para verificar se o helper ainda está ativo
+            self.helper_process.stdin.write("status\n")
+            self.helper_process.stdin.flush()
+            
+            # Lê a resposta - se não for possível ler, o helper pode não estar respondendo
+            response = self.helper_process.stdout.readline().strip()
+            
+            # Se tivermos uma resposta válida, o helper ainda está autenticado
+            return response is not None
+        except (IOError, BrokenPipeError, AttributeError):
+            return False
 
     def notify(self, message):
         """Envia uma notificação de desktop."""
@@ -143,20 +212,21 @@ class VpnGui(QWidget):
         if self.helper_process and self.helper_process.poll() is None:
             # Antes de fechar, verificar se a VPN está ativa e desconectá-la
             try:
-                # Primeiro verificar o status atual
-                self.helper_process.stdin.write("status\n")
-                self.helper_process.stdin.flush()
-                # Ler resposta de status
-                response = self.helper_process.stdout.readline().strip()
-                
-                # Se estiver conectado, desconectar antes de sair
-                if "STATUS: connected" in response:
-                    # Enviar comando de desconexão
-                    self.helper_process.stdin.write("stop\n")
+                # Primeiro verificar o status atual, se possível
+                if self._is_helper_authenticated():
+                    self.helper_process.stdin.write("status\n")
                     self.helper_process.stdin.flush()
-                    # Ler resposta de desconexão
-                    self.helper_process.stdout.readline()
+                    # Ler resposta de status
+                    response = self.helper_process.stdout.readline().strip()
                     
+                    # Se estiver conectado, desconectar antes de sair
+                    if "STATUS: connected" in response:
+                        # Enviar comando de desconexão
+                        self.helper_process.stdin.write("stop\n")
+                        self.helper_process.stdin.flush()
+                        # Ler resposta de desconexão
+                        self.helper_process.stdout.readline()
+                        
             except:
                 # Se ocorrer erro ao tentar desconectar, prosseguir com o encerramento
                 pass

@@ -141,17 +141,38 @@ class VpnGui(QWidget):
     def cleanup(self):
         """Executa a limpeza ao fechar a aplicação."""
         if self.helper_process and self.helper_process.poll() is None:
+            # Antes de fechar, verificar se a VPN está ativa e desconectá-la
             try:
-                self.helper_process.stdin.write("quit\n")
+                # Primeiro verificar o status atual
+                self.helper_process.stdin.write("status\n")
                 self.helper_process.stdin.flush()
-                self.helper_process.terminate()
-                self.helper_process.wait(timeout=2)
-            except (subprocess.TimeoutExpired, IOError, BrokenPipeError):
-                if self.helper_process.poll() is None:
-                    self.helper_process.kill()
-                    self.helper_process.wait()
-            except Exception:
-                pass # Ignora outros erros no cleanup
+                # Ler resposta de status
+                response = self.helper_process.stdout.readline().strip()
+                
+                # Se estiver conectado, desconectar antes de sair
+                if "STATUS: connected" in response:
+                    # Enviar comando de desconexão
+                    self.helper_process.stdin.write("stop\n")
+                    self.helper_process.stdin.flush()
+                    # Ler resposta de desconexão
+                    self.helper_process.stdout.readline()
+                    
+            except:
+                # Se ocorrer erro ao tentar desconectar, prosseguir com o encerramento
+                pass
+            finally:
+                # Enviar comando de saída e encerrar o processo
+                try:
+                    self.helper_process.stdin.write("quit\n")
+                    self.helper_process.stdin.flush()
+                    self.helper_process.terminate()
+                    self.helper_process.wait(timeout=2)
+                except (subprocess.TimeoutExpired, IOError, BrokenPipeError):
+                    if self.helper_process.poll() is None:
+                        self.helper_process.kill()
+                        self.helper_process.wait()
+                except Exception:
+                    pass # Ignora outros erros no cleanup
 
     def init_ui(self):
         """Inicializa a interface do usuário."""

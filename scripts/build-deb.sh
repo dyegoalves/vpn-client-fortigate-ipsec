@@ -25,11 +25,12 @@ mkdir -p "$PACKAGE_DIR/usr/bin"
 mkdir -p "$PACKAGE_DIR/usr/share/applications"
 mkdir -p "$PACKAGE_DIR/usr/share/pixmaps"
 mkdir -p "$PACKAGE_DIR/usr/share/doc/${APP_NAME}"
+mkdir -p "$PACKAGE_DIR/usr/share/polkit-1/actions"
 
 echo "Criando estrutura de diretórios..."
 
 # Copiar arquivos do aplicativo
-cp -r app/lib/modules "$PACKAGE_DIR/usr/lib/${APP_NAME}/"
+cp -r app/lib/* "$PACKAGE_DIR/usr/lib/${APP_NAME}/"
 cp app/bin/vpn-gui.py "$PACKAGE_DIR/usr/lib/${APP_NAME}/"
 cp app/bin/vpn_start.sh "$PACKAGE_DIR/usr/lib/${APP_NAME}/"
 chmod +x "$PACKAGE_DIR/usr/lib/${APP_NAME}/vpn-gui.py"
@@ -61,6 +62,9 @@ cp docs/DOCUMENTATION.md "$PACKAGE_DIR/usr/share/doc/${APP_NAME}/DOCUMENTATION.m
 cp docs/VERSION "$PACKAGE_DIR/usr/share/doc/${APP_NAME}/VERSION"
 cp README.md "$PACKAGE_DIR/usr/share/doc/${APP_NAME}/README.md"
 cp CHANGELOG.md "$PACKAGE_DIR/usr/share/doc/${APP_NAME}/CHANGELOG.md"
+
+# Copiar arquivo de política do PolicyKit
+cp app/share/polkit-1/actions/br.com.dysatech.vpn-client-fortigate.policy "$PACKAGE_DIR/usr/share/polkit-1/actions/br.com.dysatech.vpn-client-fortigate.policy"
 
 # Criar controle de pacote
 cat > "$PACKAGE_DIR/DEBIAN/control" << EOF
@@ -127,12 +131,10 @@ EOF
 # Ajustar permissões ANTES de criar o pacote
 chmod 755 "${PACKAGE_DIR}/DEBIAN"
 chmod 755 "${PACKAGE_DIR}/DEBIAN/postinst"
-find "$PACKAGE_DIR/usr/local/bin" -type f -exec chmod 755 {} \;
 find "$PACKAGE_DIR/usr/share/doc/${APP_NAME}" -type f -exec chmod 644 {} \;
 
 # Ajustar permissões para outros arquivos
 find "$PACKAGE_DIR/usr/share/applications" -type f -exec chmod 644 {} \;
-find "$PACKAGE_DIR/usr/share/icons/hicolor/256x256/apps" -type f -exec chmod 644 {} \;
 
 # Criar pacote .deb
 echo "Criando pacote .deb..."

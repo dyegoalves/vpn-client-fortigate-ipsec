@@ -6,17 +6,17 @@ from PyQt5.QtCore import Qt, QTimer
 
 # Importar usando imports absolutos ou relativos dependendo do contexto
 try:
-    from ..config.config import ICON_PATH, get_helper_path
+    from ..config.config import ICON_PATH, get_auth_helper_path
     from ..ui.widgets import ToggleSwitch
     from .worker import VpnWorker
 except ImportError:
     # Quando rodando em modo desenvolvimento com PYTHONPATH apropriado
-    from config.config import ICON_PATH, get_helper_path
+    from config.config import ICON_PATH, get_auth_helper_path
     from ui.widgets import ToggleSwitch
     from core.worker import VpnWorker
 
-# Obter o caminho do helper
-HELPER_PATH = get_helper_path()
+# Obter o caminho do helper para autenticação
+HELPER_PATH = get_auth_helper_path()
 
 # ==============================================================================
 # LÓGICA DA GUI PRINCIPAL

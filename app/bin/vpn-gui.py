@@ -11,17 +11,18 @@ import os
 # Para ambiente de desenvolvimento
 dev_path = os.path.join(os.path.dirname(__file__), '../lib')
 if os.path.exists(dev_path):
+    # Ambiente de desenvolvimento
     sys.path.insert(0, dev_path)
+    # Importa e executa o módulo principal
+    from core.main import main
 else:
-    # Se não estiver no ambiente de desenvolvimento, tentar importar como módulo instalado
-    sys.path.insert(0, '/usr/lib/vpn-client-fortigate')
+    # Ambiente instalado - o código está em /usr/lib/vpn-client-fortigate/
+    installed_path = '/usr/lib/vpn-client-fortigate'
+    if installed_path not in sys.path:
+        sys.path.insert(0, installed_path)
+    # Importa e executa o módulo principal
+    from core.main import main
 
 # Importa e executa o módulo principal
 if __name__ == "__main__":
-    # Importa main dentro do bloco if para evitar problemas com imports relativos
-    try:
-        from core.main import main
-    except ImportError:
-        # Se estiver instalado no sistema, importar como módulo do sistema
-        from vpn_client_fortigate.core.main import main
     main()

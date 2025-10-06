@@ -62,6 +62,8 @@ Após a instalação do pacote .deb, execute:
 vpn-gui
 ```
 
+**Observação:** O cliente solicitará credenciais de administrador ao ser iniciado. Isso é necessário para gerenciar conexões de rede e o serviço IPsec, conforme detalhado na [documentação completa](docs/DOCUMENTATION.md).
+
 ## Dependências
 
 - Python 3.6+

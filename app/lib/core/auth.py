@@ -43,7 +43,9 @@ def authenticate_and_start_helper():
 
     except Exception as e:
         QMessageBox.critical(None, "Erro de Autenticação",
-                             "A autenticação é necessária para gerenciar a VPN.\n"
-                             "Por favor, insira sua senha de administrador quando solicitado.\n\n"
-                             f"Detalhe do erro: {str(e)}")
+                             "Falha na autenticação.\n"
+                             "Forneça credenciais válidas de administrador.\n\n"
+                             "O aplicativo precisa de privilégios elevados para gerenciar\n"
+                             "conexões de rede e o serviço IPsec.\n\n"
+                             f"Erro: {str(e)}")
         return None

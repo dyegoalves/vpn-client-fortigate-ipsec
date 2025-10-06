@@ -407,7 +407,17 @@ Se ainda não funcionar, verifique se o serviço de gerenciamento de arquivos do
 ### Problemas Comuns
 
 **Pergunta:** Por que o cliente solicita senha de administrador?
-**Resposta:** O cliente precisa de permissões elevadas para gerenciar conexões de rede e o serviço IPsec.
+**Resposta:** O cliente precisa de permissões elevadas (root) para gerenciar conexões de rede e o serviço IPsec. Isso é necessário por motivos de segurança e controle do sistema:
+
+1. **Gerenciamento de Rede:** Configurar e ativar/desativar interfaces de rede, tabelas de roteamento, regras de firewall e outros parâmetros de rede requer privilégios de administrador.
+
+2. **Controle de Serviços:** Iniciar, parar e reiniciar o daemon IPsec (strongswan) exige permissões elevadas para garantir a integridade e segurança do sistema.
+
+3. **Gerenciamento de Processos:** Criar, terminar e monitorar processos que lidam com criptografia e conexões VPN requerem privilégios para garantir que apenas processos autorizados possam manipular dados sensíveis.
+
+4. **Acesso a Recursos do Sistema:** Configurar e manipular parâmetros do kernel relacionados à rede (módulos IPsec, tabelas de roteamento, etc.) só é permitido para o administrador do sistema.
+
+Esses privilégios são necessários para garantir a segurança e integridade do sistema, e são solicitados apenas quando necessário para operações críticas.
 
 **Pergunta:** O que significa "fortigate-vpn[20]: ESTABLISHED"?
 **Resposta:** Indica que a conexão VPN foi estabelecida com sucesso.

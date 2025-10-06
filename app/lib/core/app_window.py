@@ -62,10 +62,11 @@ class VpnGui(QWidget):
             return True
         except Exception as e:
             QMessageBox.critical(self, "Erro de Autenticação",
-                                 "A autenticação é necessária para gerenciar a VPN.\n"
-                                 "Por favor, insira sua senha de administrador quando solicitado.\n\n"
-                                 f"Detalhe do erro: {str(e)}\n\n"
-                                 "Certifique-se de que tem permissões adequadas para executar operações de rede.")
+                                 "Falha na autenticação.\n"
+                                 "Forneça credenciais válidas de administrador.\n\n"
+                                 "O aplicativo precisa de privilégios elevados para gerenciar\n"
+                                 "conexões de rede e o serviço IPsec.\n\n"
+                                 f"Erro: {str(e)}")
             return False
 
     def is_fully_authenticated(self):
@@ -109,9 +110,10 @@ class VpnGui(QWidget):
             if not self.start_helper_process():
                 # Se não conseguir reiniciar, exibe erro e desativa o toggle
                 QMessageBox.critical(self, "Erro de Autenticação",
-                                     "A autenticação expirou ou foi revogada.\n"
-                                     "Por favor, feche e reabra o aplicativo para se autenticar novamente.\n\n"
-                                     "Você precisará fornecer suas credenciais de administrador.")
+                                     "Autenticação expirada ou revogada.\n"
+                                     "Reabra o aplicativo e forneça credenciais válidas de administrador.\n\n"
+                                     "O aplicativo precisa de privilégios elevados para gerenciar\n"
+                                     "conexões de rede e o serviço IPsec.")
                 self.toggle_switch.setEnabled(False)
                 return
         

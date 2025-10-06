@@ -42,7 +42,8 @@ tmp/
 .idea/
 
 # Logs da IA
-logs/
+logs/AI/*.md
+!logs/AI/
 
 # Arquivos do sistema Linux
 *~

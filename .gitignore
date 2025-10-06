@@ -41,6 +41,9 @@ tmp/
 .vscode/
 .idea/
 
+# Logs da IA
+logs/
+
 # Arquivos do sistema Linux
 *~
 \#*\#

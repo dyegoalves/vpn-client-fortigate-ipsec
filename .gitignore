@@ -1,0 +1,46 @@
+# Arquivos e diretórios do Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# Arquivos temporários do sistema
+.DS_Store
+Thumbs.db
+
+# Arquivos de ambiente virtual
+venv/
+env/
+ENV/
+
+# Arquivos de build e pacotes
+*.deb
+*.tar.gz
+*.zip
+build/
+
+# Arquivos específicos do projeto
+*.log
+*.tmp
+tmp/
+.vscode/
+.idea/
+
+# Arquivos do sistema Linux
+*~
+\#*\#

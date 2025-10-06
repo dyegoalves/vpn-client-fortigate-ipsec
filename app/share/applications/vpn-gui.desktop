@@ -1,0 +1,10 @@
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=VPN Client FortiGate - IPsec
+Comment=Cliente VPN para FortiGate usando IPsec
+Exec=vpn-gui
+Icon=vpn-client-icon
+Terminal=false
+Categories=Network;
+StartupNotify=true

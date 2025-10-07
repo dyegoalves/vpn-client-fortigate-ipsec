@@ -1,37 +1,48 @@
 # Documentação do VPN Client FortiGate - IPsec
 
-## sSobre o Projeto
+## Sobre o Projeto
 
 O **VPN Client FortiGate - IPsec** é um cliente VPN gráfico desenvolvido pela DYSATECH para facilitar a conexão com servidores FortiGate usando a tecnologia IPsec/IKEv2.
 
-**Versão:** v0.1.0
+**Versão:** v0.1.1
 **Desenvolvido por:** DYSATECH
 **Tecnologia:** IPsec/IKEv2 com StrongSwan  | Python3 | PyQt5
 
-## Estrutura do Projeto
+## Arquitetura do Projeto
 
-- `vpn-gui.py`: Interface gráfica principal (Frontend)
-- `app/lib/vpn-client/`: Código-fonte da aplicação
-  - `core/`: Componentes principais
-    - `main.py`: Ponto de entrada principal
-    - `app_window.py`: Lógica da interface gráfica
-    - `worker.py`: Thread para operações em segundo plano
-  - `ui/`: Componentes de interface
-    - `widgets.py`: Componentes de interface personalizados
-  - `system/`: Componentes de sistema
-    - `helper.py`: Lógica executada com privilégios elevados
-  - `config/`: Configurações
-    - `config.py`: Configurações globais
-- `vpn_start.sh`: Script de linha de comando (Backend)
-- `README.md`: Documentação abreviada
-- `docs/`: Pasta com documentação detalhada
-  - `DOCUMENTATION.md`: Documentação completa
-  - `VERSION`: Informações de versão
-- `assets/`: Pasta com recursos
-  - `img/vpn.png`: Ícone da aplicação
-  - `atalho/vpn-gui.desktop`: Arquivo de atalho para o sistema
-- `CHANGELOG.md`: Histórico de alterações
-- `build-deb.sh`: Script de empacotamento
+O projeto foi reestruturado para seguir princípios de design orientado a objetos e responsabilidade única:
+
+### Estrutura de Diretórios
+
+- `app/` - Estrutura organizada do aplicativo (ambiente de desenvolvimento)
+  - `bin/` - Scripts executáveis de desenvolvimento
+    - `vpn-gui.py` - Ponto de entrada principal da GUI
+    - `vpn_start.sh` - Script de linha de comando para gerenciamento manual da VPN
+  - `lib/` - Código-fonte e bibliotecas
+    - `core/` - Componentes principais
+      - `main.py` - Ponto de entrada principal
+      - `app_window.py` - Interface gráfica principal
+      - `worker.py` - Thread para operações em segundo plano
+      - `auth.py` - Lógica de autenticação com privilégios
+      - `helper_communication.py` - Gerenciamento da comunicação com o helper
+      - `ui_manager.py` - Gerenciamento da interface do usuário
+      - `animation_manager.py` - Gerenciamento de animações e notificações
+    - `config/` - Configurações e gerenciamento de caminhos
+      - `config.py` - Configurações gerais
+      - `paths.py` - Gerenciamento de caminhos e ambientes
+    - `ui/` - Componentes de interface
+      - `widgets.py` - Componentes de interface personalizados
+    - `system/` - Componentes de sistema
+      - `helper.py` - Lógica executada com privilégios elevados
+- `docs/` - Documentação do projeto
+  - `DOCUMENTATION.md` - Documentação completa
+  - `VERSION` - Informações de versão
+- `scripts/` - Scripts de build e utilitários
+  - `build-deb.sh` - Script de empacotamento
+- `app/share/` - Recursos compartilhados
+  - `applications/` - Arquivos .desktop
+  - `pixmaps/` - Ícones
+  - `polkit-1/` - Arquivos de política do PolicyKit
 
 ## Backend - Gerenciamento da VPN
 
@@ -63,18 +74,19 @@ Antes de instalar o cliente, é essencial que os pré-requisitos do sistema este
 - StrongSwan 5.x+
 - StrongSwan PKI
 - PyQt5
+- pkexec (PolicyKit)
 
 ### Configuração do IPsec/StrongSwan (Obrigatório)
 
 Esta configuração é obrigatória e deve ser feita antes da instalação do cliente.
 
-#### 1. Instalar o StrongSwan
+#### 1. Instalar o StrongSwan e dependências
 
-Instale o StrongSwan e os utilitários necessários:s
+Instale o StrongSwan e os utilitários necessários:
 
 ```bash
 sudo apt update
-sudo apt install strongswan strongswan-pki
+sudo apt install strongswan strongswan-pki python3-pyqt5 policykit-1
 ```
 
 #### 2. Configurar o IPsec
@@ -278,14 +290,14 @@ cd /caminho/do/projeto
 python3 -m src.main
 ```
 
-A aplicação solicitará permissões de administrador para gerenciar a conexão VPN.
+A aplicação solicitará permissões de administrador para gerenciar a conexão VPN através do PolicyKit.
 
 ### Elementos da Interface
 
 - **Janela Principal:** "VPN Client FortiGate - IPsec"
 - **Toggle Switch:** Conecta/desconecta a VPN com um clique
 - **Indicador de Status:** Mostra se a VPN está conectada ou desconectada
-- **Rodapé:** Informações da versão e empresa ("VPN Client FortiGate - IPsec v0.1.0 | © 2025 DYSATECH | Open Source")
+- **Rodapé:** Informações da versão e empresa ("VPN Client FortiGate - IPsec v0.1.1 | © 2025 DYSATECH | Open Source")
 
 ### Funcionalidades da GUI
 
@@ -294,6 +306,29 @@ A aplicação solicitará permissões de administrador para gerenciar a conexão
 - Animações durante processos de conexão/desconexão
 - Notificações de sistema
 - Desconexão automática ao fechar a aplicação
+
+## Autenticação e Permissões
+
+### Política do PolicyKit
+
+O aplicativo inclui um arquivo de política do PolicyKit para permitir a execução de comandos com privilégios elevados:
+
+- `br.com.dysatech.vpn-client-fortigate.policy`: Permite a execução do helper com privilégios de administrador
+
+Este arquivo é instalado em `/usr/share/polkit-1/actions/` quando o pacote .deb é instalado.
+
+### Processo de Autenticação
+
+1. O aplicativo solicita credenciais de administrador através do `pkexec`
+2. Um processo helper é iniciado com privilégios elevados
+3. O aplicativo se comunica com o helper através de pipes (stdin/stdout)
+4. O helper executa comandos do IPsec em nome do aplicativo
+
+### Tratamento de Processos
+
+- O aplicativo verifica constantemente se o helper está respondendo
+- Em caso de falha na comunicação, tenta reiniciar o helper
+- No encerramento, o aplicativo envia comando de desconexão caso a VPN esteja ativa
 
 ### Instalação do Cliente Frontend
 
@@ -436,20 +471,23 @@ O projeto inclui scripts para facilitar o empacotamento e instalação em distri
 
 O projeto inclui os seguintes scripts:
 
-- `build-deb.sh`: Gera pacote .deb para distribuição
+- `scripts/build-deb.sh`: Gera pacote .deb para distribuição
 
 ### Como empacotar o projeto
 
 Execute o script de empacotamento:
 
 ```bash
-./build-deb.sh
+./scripts/build-deb.sh
 ```
 
 O script irá:
 
 1. Criar uma estrutura de pacote adequada
 2. Gerar um pacote .deb instalável com `dpkg`
+3. Incluir todos os módulos Python necessários
+4. Incluir o arquivo de política do PolicyKit
+5. Criar os wrappers executáveis em `/usr/bin/`
 
 Após a execução, você encontrará o pacote em `build/vpn-client-fortigate_*.deb`.
 

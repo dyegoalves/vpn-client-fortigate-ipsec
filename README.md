@@ -15,6 +15,8 @@ O **VPN Client FortiGate - IPsec** é um cliente VPN gráfico desenvolvido pela 
 - Desconexão automática ao fechar o aplicativo
 - Controle refinado da conexão VPN
 - Notificações de sistema
+- Arquitetura modular e bem estruturada
+- Suporte a múltiplos ambientes (desenvolvimento e produção)
 
 ## Estrutura do Projeto
 
@@ -22,11 +24,31 @@ O projeto segue os padrões FHS (Filesystem Hierarchy Standard) para software de
 
 - `app/` - Estrutura organizada do aplicativo (ambiente de desenvolvimento)
   - `bin/` - Scripts executáveis de desenvolvimento
-  - `lib/` - Código-fonte e bibliotecas (com subdiretório `modules/`)
+  - `lib/` - Código-fonte e bibliotecas (com subdiretórios para diferentes componentes)
   - `share/` - Recursos compartilhados (ícones, arquivos .desktop)
 - `docs/` - Documentação do projeto
 - `scripts/` - Scripts de build e utilitários
 - `uninstall.sh` - Script de desinstalação
+
+## Arquitetura Modular
+
+O projeto foi refatorado para seguir princípios de design orientado a objetos e responsabilidade única:
+
+- `core/` - Lógica principal da aplicação
+  - `app_window.py` - Interface gráfica principal
+  - `helper_communication.py` - Gerenciamento da comunicação com o helper
+  - `ui_manager.py` - Gerenciamento da interface do usuário
+  - `animation_manager.py` - Gerenciamento de animações e notificações
+  - `worker.py` - Execução de tarefas em segundo plano
+  - `auth.py` - Lógica de autenticação com privilégios
+  - `main.py` - Ponto de entrada da aplicação
+- `config/` - Configurações e gerenciamento de caminhos
+  - `config.py` - Configurações gerais
+  - `paths.py` - Gerenciamento de caminhos e ambientes
+- `system/` - Componentes de baixo nível
+  - `helper.py` - Lógica do helper com privilégios
+- `ui/` - Componentes da interface do usuário
+  - `widgets.py` - Widgets personalizados
 
 ## Desenvolvimento
 
@@ -45,6 +67,7 @@ O pacote .deb instala os arquivos da seguinte forma:
 - Ícones em `/usr/share/pixmaps/`
 - Arquivo .desktop em `/usr/share/applications/`
 - Documentação em `/usr/share/doc/vpn-client-fortigate/`
+- Arquivo de política do PolicyKit em `/usr/share/polkit-1/actions/`
 
 ## Desinstalação
 

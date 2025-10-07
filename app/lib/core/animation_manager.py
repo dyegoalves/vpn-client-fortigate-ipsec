@@ -34,5 +34,9 @@ class AnimationManager:
     def send_notification(self, message):
         """Envia uma notificação de desktop."""
         import subprocess
-        from ..config.config import ICON_PATH
+        # Importar dentro da função para evitar problemas de importação
+        try:
+            from ..config.config import ICON_PATH
+        except (ImportError, ValueError):
+            from config.config import ICON_PATH
         subprocess.run(["notify-send", "Gerenciador de VPN", message, "--icon", ICON_PATH])

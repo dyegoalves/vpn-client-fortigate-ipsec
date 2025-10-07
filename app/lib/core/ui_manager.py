@@ -1,7 +1,6 @@
 from PyQt5.QtWidgets import QLabel, QVBoxLayout, QWidget
 from PyQt5.QtGui import QIcon
 from PyQt5.QtCore import Qt
-from ..ui.widgets import ToggleSwitch
 
 class UIManager:
     """Classe para gerenciar a interface do usuário."""
@@ -14,6 +13,12 @@ class UIManager:
         
     def init_ui(self):
         """Inicializa a interface do usuário."""
+        # Importar dentro da função para evitar problemas de importação
+        try:
+            from ..ui.widgets import ToggleSwitch
+        except (ImportError, ValueError):
+            from ui.widgets import ToggleSwitch
+        
         self.parent.setWindowTitle("VPN Client FortiGate - IPsec")
         self.parent.setWindowIcon(QIcon(self.icon_path))
         self.parent.setGeometry(600, 300, 500, 220)

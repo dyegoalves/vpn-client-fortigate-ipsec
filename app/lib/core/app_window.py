@@ -2,21 +2,6 @@ import sys
 from PyQt5.QtWidgets import QWidget, QMessageBox
 from PyQt5.QtCore import Qt
 
-# Importar usando imports absolutos ou relativos dependendo do contexto
-try:
-    from ..config.config import ICON_PATH
-    from .worker import VpnWorker
-    from .helper_communication import HelperCommunication
-    from .ui_manager import UIManager
-    from .animation_manager import AnimationManager
-except ImportError:
-    # Quando rodando em modo desenvolvimento com PYTHONPATH apropriado
-    from config.config import ICON_PATH
-    from core.worker import VpnWorker
-    from core.helper_communication import HelperCommunication
-    from core.ui_manager import UIManager
-    from core.animation_manager import AnimationManager
-
 # ==============================================================================
 # LÓGICA DA GUI PRINCIPAL
 # ==============================================================================
@@ -28,6 +13,21 @@ class VpnGui(QWidget):
         self.helper_comm = None
         self.ui_manager = None
         self.animation_manager = None
+        
+        # Importar dentro do construtor para evitar problemas de importação
+        try:
+            from ..config.config import ICON_PATH
+            from .worker import VpnWorker
+            from .helper_communication import HelperCommunication
+            from .ui_manager import UIManager
+            from .animation_manager import AnimationManager
+        except ImportError:
+            # Quando rodando em modo desenvolvimento com PYTHONPATH apropriado
+            from config.config import ICON_PATH
+            from core.worker import VpnWorker
+            from core.helper_communication import HelperCommunication
+            from core.ui_manager import UIManager
+            from core.animation_manager import AnimationManager
         
         # Inicializar os gerenciadores
         self.ui_manager = UIManager(self, ICON_PATH)
@@ -44,6 +44,12 @@ class VpnGui(QWidget):
         else:
             self.check_status()
 
+    def _is_helper_authenticated(self):
+        """Verifica se o helper ainda está autenticado e respondendo."""
+        if not self.helper_comm:
+            return False
+        return self.helper_comm.is_helper_authenticated()
+
     def start_helper_process(self):
         """Inicia o processo helper com privilégios de root via pkexec."""
         # Importar dentro da função para evitar problemas de importação circular
@@ -59,6 +65,11 @@ class VpnGui(QWidget):
         
         if self.helper_process:
             # Criar o objeto de comunicação com o helper
+            try:
+                from .helper_communication import HelperCommunication
+            except ImportError:
+                from core.helper_communication import HelperCommunication
+                
             self.helper_comm = HelperCommunication(self.helper_process)
             return True
         
@@ -79,6 +90,11 @@ class VpnGui(QWidget):
                 self.ui_manager.set_toggle_state(False)
                 return
         
+        try:
+            from .worker import VpnWorker
+        except ImportError:
+            from core.worker import VpnWorker
+            
         self.worker = VpnWorker(self.helper_process, command)
         self.worker.result_ready.connect(on_finish)
         self.worker.start()

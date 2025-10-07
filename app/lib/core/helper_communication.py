@@ -1,12 +1,17 @@
 import subprocess
-from ..config.paths import get_auth_helper_path
 
 class HelperCommunication:
     """Classe para gerenciar a comunicação com o processo helper."""
     
     def __init__(self, helper_process):
         self.helper_process = helper_process
-        self.helper_path = get_auth_helper_path()
+        # Importar dentro do construtor para evitar problemas de importação
+        try:
+            from ..config.paths import get_auth_helper_path
+            self.helper_path = get_auth_helper_path()
+        except (ImportError, ValueError):
+            from config.paths import get_auth_helper_path
+            self.helper_path = get_auth_helper_path()
 
     def send_command(self, command):
         """Envia um comando para o helper e retorna a resposta."""

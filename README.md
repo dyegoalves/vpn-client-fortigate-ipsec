@@ -2,104 +2,36 @@
 
 Cliente gráfico para gerenciamento de conexão VPN FortiGate usando IPsec/IKEv2.
 
-<img src="./app/share/pixmaps/vpn.png" width="128">
-
 ## Descrição
 
-O **VPN Client FortiGate - IPsec** é um cliente VPN gráfico desenvolvido pela DYSATECH para facilitar a conexão com servidores FortiGate usando a tecnologia IPsec/IKEv2.
+O **VPN Client FortiGate - IPsec** é um cliente VPN gráfico desenvolvido para facilitar a conexão com servidores FortiGate usando a tecnologia IPsec/IKEv2 com StrongSwan.
 
-## Funcionalidades
-
-- Interface gráfica intuitiva com toggle switch
-- Indicadores visuais de status em tempo real
-- Desconexão automática ao fechar o aplicativo
-- Controle refinado da conexão VPN
-- Notificações de sistema
-- Arquitetura modular e bem estruturada
-- Suporte a múltiplos ambientes (desenvolvimento e produção)
-
-## Estrutura do Projeto
-
-O projeto segue os padrões FHS (Filesystem Hierarchy Standard) para software desktop Linux:
-
-- `app/` - Estrutura organizada do aplicativo (ambiente de desenvolvimento)
-  - `bin/` - Scripts executáveis de desenvolvimento
-  - `lib/` - Código-fonte e bibliotecas (com subdiretórios para diferentes componentes)
-  - `share/` - Recursos compartilhados (ícones, arquivos .desktop)
-- `docs/` - Documentação do projeto
-- `scripts/` - Scripts de build e utilitários
-- `uninstall.sh` - Script de desinstalação
-
-## Arquitetura Modular
-
-O projeto foi refatorado para seguir princípios de design orientado a objetos e responsabilidade única:
-
-- `core/` - Lógica principal da aplicação
-  - `app_window.py` - Interface gráfica principal
-  - `helper_communication.py` - Gerenciamento da comunicação com o helper
-  - `ui_manager.py` - Gerenciamento da interface do usuário
-  - `animation_manager.py` - Gerenciamento de animações e notificações
-  - `worker.py` - Execução de tarefas em segundo plano
-  - `auth.py` - Lógica de autenticação com privilégios
-  - `main.py` - Ponto de entrada da aplicação
-- `config/` - Configurações e gerenciamento de caminhos
-  - `config.py` - Configurações gerais
-  - `paths.py` - Gerenciamento de caminhos e ambientes
-- `system/` - Componentes de baixo nível
-  - `helper.py` - Lógica do helper com privilégios
-- `ui/` - Componentes da interface do usuário
-  - `widgets.py` - Widgets personalizados
-
-## Desenvolvimento
-
-Para executar diretamente do código-fonte:
-
-```bash
-cd app/bin
-python3 vpn-gui.py
-```
-
-## Empacotamento
-
-O pacote .deb instala os arquivos da seguinte forma:
-- Código-fonte em `/usr/lib/vpn-client-fortigate/`
-- Executáveis em `/usr/bin/` (vpn-gui, vpn-start)
-- Ícones em `/usr/share/pixmaps/`
-- Arquivo .desktop em `/usr/share/applications/`
-- Documentação em `/usr/share/doc/vpn-client-fortigate/`
-- Arquivo de política do PolicyKit em `/usr/share/polkit-1/actions/`
-
-## Desinstalação
-
-Execute o script de desinstalação como root:
-
-```bash
-sudo ./uninstall.sh
-```
-
-## Execução
-
-Após a instalação do pacote .deb, execute:
-
-```bash
-vpn-gui
-```
-
-**Observação:** O cliente solicitará credenciais de administrador ao ser iniciado. Isso é necessário para gerenciar conexões de rede e o serviço IPsec, conforme detalhado na [documentação completa](docs/DOCUMENTATION.md).
-
-## Dependências
+## Tecnologias
 
 - Python 3.6+
 - PyQt5
 - StrongSwan
-- pkexec (PolicyKit)
+- IPsec/IKEv2
+- PolicyKit
+
+## Padrão de Projeto
+
+O projeto segue princípios de design orientado a objetos e responsabilidade única:
+
+- Arquitetura modular com componentes bem definidos
+- Separação entre interface gráfica, lógica de negócios e comunicação de baixo nível
+- Comunicação segura entre componentes com diferentes níveis de privilégio
 
 ## Documentação
 
 Para instruções detalhadas de configuração, instalação e uso, consulte a [documentação completa](docs/DOCUMENTATION.md).
 
+## Licença
+
+Este projeto está licenciado sob a licença MIT - veja o arquivo [LICENSE](LICENSE) para detalhes.
+
 ---
 
-**VPN Client FortiGate - IPsec v0.1.0**
-Desenvolvido por: DYSATECH
+**VPN Client FortiGate - IPsec v0.1.1**  
+Desenvolvido por: DYSATECH  
 © 2025 DYSATECH - Open Source

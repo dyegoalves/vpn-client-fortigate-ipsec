@@ -1,192 +1,98 @@
 # Documentação do VPN Client FortiGate - IPsec
 
-## Sobre o Projeto
-
-O **VPN Client FortiGate - IPsec** é um cliente VPN gráfico desenvolvido pela DYSATECH para facilitar a conexão com servidores FortiGate usando a tecnologia IPsec/IKEv2.
-
-**Versão:** v0.1.1
-**Desenvolvido por:** DYSATECH
-**Tecnologia:** IPsec/IKEv2 com StrongSwan  | Python3 | PyQt5
-
 ## Arquitetura do Projeto
 
-O projeto foi reestruturado para seguir princípios de design orientado a objetos e responsabilidade única:
+O projeto segue princípios de design orientado a objetos e responsabilidade única:
 
-### Estrutura de Diretórios
+- Componentes bem definidos com funções específicas
+- Separação clara entre interface e lógica de negócios
+- Comunicação segura entre componentes de usuário e sistema
 
-- `app/` - Estrutura organizada do aplicativo (ambiente de desenvolvimento)
-  - `bin/` - Scripts executáveis de desenvolvimento
-    - `vpn-gui.py` - Ponto de entrada principal da GUI
-    - `vpn_start.sh` - Script de linha de comando para gerenciamento manual da VPN
-  - `lib/` - Código-fonte e bibliotecas
-    - `core/` - Componentes principais
-      - `main.py` - Ponto de entrada principal
-      - `app_window.py` - Interface gráfica principal
-      - `worker.py` - Thread para operações em segundo plano
-      - `auth.py` - Lógica de autenticação com privilégios
-      - `helper_communication.py` - Gerenciamento da comunicação com o helper
-      - `ui_manager.py` - Gerenciamento da interface do usuário
-      - `animation_manager.py` - Gerenciamento de animações e notificações
+## Estrutura de Diretórios
+
+- `app/` - Código-fonte e recursos do aplicativo
+  - `bin/` - Scripts executáveis
+  - `lib/` - Código-fonte principal
+    - `core/` - Componentes principais (interface, comunicação, workers)
     - `config/` - Configurações e gerenciamento de caminhos
-      - `config.py` - Configurações gerais
-      - `paths.py` - Gerenciamento de caminhos e ambientes
     - `ui/` - Componentes de interface
-      - `widgets.py` - Componentes de interface personalizados
-    - `system/` - Componentes de sistema
-      - `helper.py` - Lógica executada com privilégios elevados
+    - `system/` - Componentes de sistema com privilégios
+  - `share/` - Recursos compartilhados (ícones, arquivos .desktop)
 - `docs/` - Documentação do projeto
-  - `DOCUMENTATION.md` - Documentação completa
-  - `VERSION` - Informações de versão
 - `scripts/` - Scripts de build e utilitários
-  - `build-deb.sh` - Script de empacotamento
-- `app/share/` - Recursos compartilhados
-  - `applications/` - Arquivos .desktop
-  - `pixmaps/` - Ícones
-  - `polkit-1/` - Arquivos de política do PolicyKit
+- `build/` - Arquivos gerados pelo processo de compilação
+- `logs/` - Registros de execução do aplicativo
 
 ## Backend - Gerenciamento da VPN
 
-### Componentes
+O backend utiliza o StrongSwan para gerenciar as conexões IPsec/IKEv2. Inclui:
 
 - **StrongSwan**: Daemon IPsec para gerenciamento das conexões VPN
-- **IPsec/IKEv2**: Protocolo de segurança para tunelamento
 - **Script vpn_start.sh**: Interface de linha de comando para operações da VPN
 
-### Pré-requisitos do Sistema
-
-Antes de instalar o cliente, é essencial que os pré-requisitos do sistema estejam atendidos.
-
-#### Sistema Operacional
-
-- Distribuição Linux (Debian/Ubuntu recomendado)
-- Kernel atualizado com suporte a módulos IPsec
-- Acesso como administrador (sudo)
-
-#### Recursos do Sistema
-
-- Memória RAM: mínimo de 512MB livres
-- Armazenamento: 50MB livres para instalação
-- Conexão de rede ativa antes da configuração
-
-#### Dependências do Sistema
+### Pré-requisitos
 
 - Python 3.6+
 - StrongSwan 5.x+
 - StrongSwan PKI
 - PyQt5
 - pkexec (PolicyKit)
+- Acesso como administrador (sudo)
 
-### Configuração do IPsec/StrongSwan (Obrigatório)
+## Configuração do IPsec
 
-Esta configuração é obrigatória e deve ser feita antes da instalação do cliente.
-
-#### 1. Instalar o StrongSwan e dependências
-
-Instale o StrongSwan e os utilitários necessários:
+### 1. Instalar dependências
 
 ```bash
 sudo apt update
 sudo apt install strongswan strongswan-pki python3-pyqt5 policykit-1
 ```
 
-#### 2. Configurar o IPsec
+### 2. Configurar IPsec
 
-Edite o arquivo de configuração do IPsec:
+Edite `sudo nano /etc/ipsec.conf` e adicione a conexão VPN:
 
-```bash
-sudo nano /etc/ipsec.conf
-```
-
-Adicione a configuração da conexão VPN (ajuste conforme sua rede). A seguir, duas opções de configuração:
-
-**Opção 1 - Acesso a Múltiplas Redes (Recomendado para seu caso):**
-Esta configuração permite acesso às redes 192.168.126.x, 192.168.127.x e 10.10.14.x pela VPN, enquanto outros tráfegos (como navegação na internet) continuam usando a conexão padrão:
+**Atenção**: Edite com seus dados, observando os campos entre `<>` e substitua-os.
+Além disso, observe que `ike` (fase 1) e `esp` (fase 2) são algoritmos de autenticação que precisam ser compatíveis com o servidor.
 
 ```conf
-# ipsec.conf - strongSwan IPsec configuration file
-
 config setup
     charondebug="ike 2, knl 2, cfg 2, mgr 2"
 
-conn fortigate-vpn
+conn fortigate-vpn  
     keyexchange=ikev2
     ike=aes256-sha256-ecp256
     esp=aes256-sha256
     left=%defaultroute
-    leftid="seu_identificador"
+    leftid="<SEU_IDENTIFICADOR_AQUI>"
     leftauth=eap-mschapv2
-    eap_identity="seu_usuario"
+    eap_identity="<SEU_USUARIO_AQUI>"
     leftsourceip=%config
-    right=endereco_servidor_vpn
-    rightid=%any
-    rightauth=psk
-    rightsubnet=192.168.126.0/24,192.168.127.0/24,10.10.14.0/24
-    auto=add
-```
-
-**Opção 2 - Acesso Total (Padrão, roteia todo tráfego pela VPN):**
-Esta configuração roteia todo o tráfego pela VPN, útil para ambientes com políticas de segurança mais rígidas:
-
-```conf
-# ipsec.conf - strongSwan IPsec configuration file
-
-config setup
-    charondebug="ike 2, knl 2, cfg 2, mgr 2"
-
-conn fortigate-vpn
-    keyexchange=ikev2
-    ike=aes256-sha256-ecp256
-    esp=aes256-sha256
-    left=%defaultroute
-    leftid="seu_identificador"
-    leftauth=eap-mschapv2
-    eap_identity="seu_usuario"
-    leftsourceip=%config
-    right=endereco_servidor_vpn
+    right=<IP_DO_SERVIDOR_VPN_AQUI>
     rightid=%any
     rightauth=psk
     rightsubnet=0.0.0.0/0
     auto=add
 ```
 
-A Opção 1 é recomendada se você precisa acessar servidores específicos nas redes mencionadas mantendo acesso normal à internet. A Opção 2 deve ser usada se sua política de segurança exige que todo tráfego passe pela VPN.
+### 3. Configurar credenciais
 
-#### 3. Configurar as credenciais
-
-Edite o arquivo de credenciais da VPN:
-
-```bash
-sudo nano /etc/ipsec.secrets
-```
-
-Adicione as credenciais (substitua pelos seus dados reais):
+Em `sudo nano /etc/ipsec.secrets`, adicione:
 
 ```conf
-: PSK "sua_chave_psk_secreta"
-seu_usuario : EAP "sua_senha_usuario"
+: PSK "<SUA_CHAVE_PSK_SECRET_AQUI>"
+<SEU_USUARIO_AQUI> : EAP "<SUA_SENNHA_USUARIO_AQUI>"
 ```
 
-#### 4. Reiniciar o serviço
+> **Observação**: Substitua `<SEU_USUARIO_AQUI>` pelo mesmo nome de usuário usado na configuração do IPsec.
 
-Após modificar os arquivos, reinicie o serviço IPsec:
+### 4. Reiniciar serviço
 
 ```bash
 sudo ipsec restart
 ```
 
-#### 5. Verificar funcionamento
-
-Teste se tudo está funcionando corretamente:
-
-```bash
-sudo ipsec statusall
-```
-
-#### Comandos do StrongSwan e IPsec
-
-O StrongSwan fornece uma interface de linha de comando para gerenciar a VPN. Aqui estão os comandos mais importantes:
-
-#### Comandos Básicos Terminal
+## Comandos úteis do StrongSwan
 
 ```bash
 # Conectar à VPN
@@ -195,354 +101,53 @@ sudo ipsec up fortigate-vpn
 # Desconectar da VPN
 sudo ipsec down fortigate-vpn
 
-# Reiniciar a conexão
-sudo ipsec restart
-
-# Recarregar configurações
-sudo ipsec reload
-```
-
-#### 6. Logs Esperados para Condições de Sucesso
-
-Quando o IPsec/StrongSwan está configurado corretamente, os seguintes logs indicam funcionamento adequado:
-
-**Exemplo de saída com conexão ESTABELECIDA:**
-
-```bash
+# Ver status
 sudo ipsec statusall
 
-Status of IKE charon daemon (strongSwan 5.9.13, Linux 6.12.33-amd64-desktop-rolling, x86_64):
-  uptime: 58 minutes, since Oct 06 00:31:41 2025
-  malloc: sbrk 3289088, mmap 0, used 1610128, free 1678960
-  worker threads: 11 of 16 idle, 5/0/0/0 working, job queue: 0/0/0/0, scheduled: 41
-  loaded plugins: charon test-vectors ldap pkcs11 tpm aesni aes rc2 sha2 sha1 md5 mgf1 rdrand random nonce x509 revocation constraints pubkey pkcs1 pkcs7 pkcs12 pgp dnskey sshkey pem openssl gcrypt pkcs8 af-alg fips-prf gmp curve25519 agent chapoly xcbc cmac hmac kdf ctr ccm gcm drbg curl attr kernel-netlink resolve socket-default connmark forecast farp stroke updown eap-identity eap-aka eap-md5 eap-gtc eap-mschapv2 eap-radius eap-tls eap-ttls eap-tnc xauth-generic xauth-eap xauth-pam tnc-tnccs dhcp lookip error-notify certexpire led addrblock unity counters
-Listening IP addresses:
-  192.168.18.32
-  2804:3ac0:f7a2:6334:fad7:b18c:e3c6:3070
-Connections:
-fortigate-vpn:  %any...189.50.211.108  IKEv2
-fortigate-vpn:   local:  [senai] uses EAP_MSCHAPV2 authentication with EAP identity 'dyegoalves'
-fortigate-vpn:   remote: uses pre-shared key authentication
-fortigate-vpn:   child:  dynamic === 0.0.0.0/0 TUNNEL
-Security Associations (1 up, 0 connecting):
-fortigate-vpn[20]: ESTABLISHED 13 seconds ago, 192.168.18.32[senai]...189.50.211.108[senai.aginet.com.br]
-fortigate-vpn[20]: IKEv2 SPIs: c45745fd1fb71ffe_i* 67557dd97d08988c_r, EAP reauthentication in 2 hours
-fortigate-vpn[20]: IKE proposal: AES_CBC_256/HMAC_SHA2_256_128/PRF_HMAC_SHA2_256/ECP_256
-fortigate-vpn{20}:  INSTALLED, TUNNEL, reqid 1, ESP in UDP SPIs: c84a0ffd_i b552dce1_o
-fortigate-vpn{20}:  AES_CBC_256/HMAC_SHA2_256_128, 168 bytes_i (2 pkts, 12s ago), 1890 bytes_o (29 pkts, 1s ago), rekeying in 44 minutes
-fortigate-vpn{20}:   192.168.100.1/32 === 0.0.0.0/0
+# Ver conexões disponíveis
+sudo ipsec listconns
+
+# Verificar status de uma conexão específica
+sudo ipsec status
 ```
 
-```bash
-sudo ipsec status fortigate-vpn 
+## Frontend - Interface Gráfica
 
-Security Associations (1 up, 0 connecting):
-fortigate-vpn[24]: ESTABLISHED 4 minutes ago, 192.168.18.32[senai]...189.50.211.108[senai.aginet.com.br]
-fortigate-vpn{24}:  INSTALLED, TUNNEL, reqid 1, ESP in UDP SPIs: c6d8a947_i b552dce5_o
-fortigate-vpn{24}:   192.168.100.1/32 === 0.0.0.0/0
-```
+A interface gráfica é construída com PyQt5 e oferece:
 
-Neste exemplo, observe os indicadores de SUCESSO:
-
-* **fortigate-vpn[24]: ESTABLISHED 9 seconds ago, 192.168.18.32[senai]...189.50.211.108[senai.aginet.com.br]**
-
-- "Security Associations (1 up, 0 connecting)": 1 associação ativa
-- "fortigate-vpn[20]: ESTABLISHED 13 seconds ago": conexão estabelecida há 13 segundos
-- "192.168.18.32[senai]...189.50.211.108[senai.aginet.com.br]": IPs local e remoto corretos
-- "fortigate-vpn{20}:  INSTALLED, TUNNEL": túnel IPsec instalado e ativo
-- "bytes_i" e "bytes_o": tráfego sendo contado em ambas direções (entrada e saída)
-
-### Instalação do Cliente Backend
-
-O backend do cliente é baseado no StrongSwan e não requer instalação adicional além do script vpn_start.sh que já faz parte do repositório. O script pode ser executado diretamente:
-
-```bash
-bash vpn_start.sh
-```
-
-
-
----
-
-
-
-## Frontend - GUI (Interface Gráfica)
-
-### Componentes
-
-- **PyQt5**: Framework para interface gráfica
-- **vpn-gui.py**: Código-fonte principal da interface gráfica
-- **Elementos da interface**: Toggle Switch, Indicadores de Status e Animações
-
-### Execução
-
-Execute o cliente com interface gráfica:
-
-```bash
-cd /caminho/do/projeto
-python3 vpn-gui.py
-```
-
-Ou execute diretamente o módulo:
-
-```bash
-cd /caminho/do/projeto
-python3 -m src.main
-```
-
-A aplicação solicitará permissões de administrador para gerenciar a conexão VPN através do PolicyKit.
-
-### Elementos da Interface
-
-- **Janela Principal:** "VPN Client FortiGate - IPsec"
-- **Toggle Switch:** Conecta/desconecta a VPN com um clique
-- **Indicador de Status:** Mostra se a VPN está conectada ou desconectada
-- **Rodapé:** Informações da versão e empresa ("VPN Client FortiGate - IPsec v0.1.1 | © 2025 DYSATECH | Open Source")
-
-### Funcionalidades da GUI
-
-- Conectar/desconectar VPN com um clique
-- Atualização visual do status em tempo real
-- Animações durante processos de conexão/desconexão
-- Notificações de sistema
-- Desconexão automática ao fechar a aplicação
+- Toggle switch para conexão/desconexão
+- Indicadores visuais de status
+- Animações e notificações
+- Desconexão automática ao fechar
 
 ## Autenticação e Permissões
 
-### Política do PolicyKit
+O aplicativo utiliza PolicyKit para execução de comandos com privilégios:
 
-O aplicativo inclui um arquivo de política do PolicyKit para permitir a execução de comandos com privilégios elevados:
+- Solicita credenciais de administrador via `pkexec`
+- Comunica-se com um helper que executa comandos IPsec
+- Verifica constantemente se o helper está respondendo
 
-- `br.com.dysatech.vpn-client-fortigate.policy`: Permite a execução do helper com privilégios de administrador
+## Empacotamento
 
-Este arquivo é instalado em `/usr/share/polkit-1/actions/` quando o pacote .deb é instalado.
-
-### Processo de Autenticação
-
-1. O aplicativo solicita credenciais de administrador através do `pkexec`
-2. Um processo helper é iniciado com privilégios elevados
-3. O aplicativo se comunica com o helper através de pipes (stdin/stdout)
-4. O helper executa comandos do IPsec em nome do aplicativo
-
-### Tratamento de Processos
-
-- O aplicativo verifica constantemente se o helper está respondendo
-- Em caso de falha na comunicação, tenta reiniciar o helper
-- No encerramento, o aplicativo envia comando de desconexão caso a VPN esteja ativa
-
-### Instalação do Cliente Frontend
-
-#### Passo 1: Instalar PyQt5
-
-Instale a biblioteca gráfica:
-
-```bash
-pip3 install PyQt5
-```
-
-#### Passo 2: Obter o Cliente
-
-Clone o repositório do projeto:
-
-```bash
-git clone https://github.com/seu_usuario/vpn-client-fortigate.git
-cd vpn-client-fortigate
-```
-
-## Atalho no Sistema
-
-### Criar atalho no menu de aplicações
-
-Ou use o arquivo .desktop pronto ou crie manualmente:
-
-**Opção 1: Usando o arquivo .desktop pronto (recomendado):**
-
-1. Torne o script executável:
-   ```bash
-   chmod +x /home/dyegoalves/vpn/vpn-gui.py
-   ```
-
-2. Copie o arquivo .desktop fornecido para o diretório de aplicações:
-   ```bash
-   cp /home/dyegoalves/vpn/assets/atalho/vpn-gui.desktop ~/.local/share/applications/
-   ```
-
-3. Copie o ícone para o diretório de ícones do sistema:
-   ```bash
-   mkdir -p ~/.local/share/icons/hicolor/256x256/apps/
-   cp /home/dyegoalves/vpn/assets/img/vpn.png ~/.local/share/icons/hicolor/256x256/apps/vpn-client-icon.png
-   ```
-
-4. Atualize o cache de aplicativos:
-   ```bash
-   update-desktop-database ~/.local/share/applications/
-   ```
-
-**Opção 2: Criando o arquivo .desktop manualmente:**
-
-1. Torne o script executável:
-   ```bash
-   chmod +x /home/dyegoalves/vpn/vpn-gui.py
-   ```
-
-2. Crie o arquivo `.desktop` em `~/.local/share/applications/`:
-   ```ini
-   [Desktop Entry]
-   Version=1.0
-   Type=Application
-   Name=VPN Client FortiGate - IPsec
-   Comment=Cliente VPN para FortiGate usando IPsec
-   Exec=/home/dyegoalves/vpn/vpn-gui.py
-   Icon=vpn-client-icon
-   Terminal=false
-   Categories=Network;
-   StartupNotify=true
-   ```
-
-3. Copie o ícone para o diretório de ícones do sistema:
-   ```bash
-   mkdir -p ~/.local/share/icons/hicolor/256x256/apps/
-   cp /home/dyegoalves/vpn/assets/img/vpn.png ~/.local/share/icons/hicolor/256x256/apps/vpn-client-icon.png
-   ```
-
-4. Atualize o cache de aplicativos:
-   ```bash
-   update-desktop-database ~/.local/share/applications/
-   ```
-
-### Criar atalho na área de trabalho
-
-Para criar um atalho diretamente na área de trabalho:
-
-1. Copie o arquivo .desktop fornecido para a pasta da área de trabalho:
-   ```bash
-   cp /home/dyegoalves/vpn/assets/atalho/vpn-gui.desktop ~/Área\\ de\\ Trabalho/
-   # ou em inglês:
-   cp /home/dyegoalves/vpn/assets/atalho/vpn-gui.desktop ~/Desktop/
-   ```
-
-2. Torne o atalho confiável (necessário em muitos sistemas):
-   ```bash
-   chmod +x ~/Área\\ de\\ Trabalho/vpn-gui.desktop
-   # ou em inglês:
-   chmod +x ~/Desktop/vpn-gui.desktop
-   ```
-
-### Instruções Específicas para Deepin Linux
-
-No Deepin Linux, após seguir as etapas acima, o atalho deve aparecer no menu de aplicações. Em alguns casos, pode ser necessário reiniciar a sessão ou o sistema para que o ícone apareça corretamente.
-
-Caso o ícone não apareça no menu, você pode tentar atualizar o cache de ícones:
-```bash
-gtk-update-icon-cache
-```
-
-Se ainda não funcionar, verifique se o serviço de gerenciamento de arquivos do Deepin está reconhecendo o novo arquivo .desktop.
-
-### Problemas Comuns
-
-**Pergunta:** Por que o cliente solicita senha de administrador?
-**Resposta:** O cliente precisa de permissões elevadas (root) para gerenciar conexões de rede e o serviço IPsec. Isso é necessário por motivos de segurança e controle do sistema:
-
-1. **Gerenciamento de Rede:** Configurar e ativar/desativar interfaces de rede, tabelas de roteamento, regras de firewall e outros parâmetros de rede requer privilégios de administrador.
-
-2. **Controle de Serviços:** Iniciar, parar e reiniciar o daemon IPsec (strongswan) exige permissões elevadas para garantir a integridade e segurança do sistema.
-
-3. **Gerenciamento de Processos:** Criar, terminar e monitorar processos que lidam com criptografia e conexões VPN requerem privilégios para garantir que apenas processos autorizados possam manipular dados sensíveis.
-
-4. **Acesso a Recursos do Sistema:** Configurar e manipular parâmetros do kernel relacionados à rede (módulos IPsec, tabelas de roteamento, etc.) só é permitido para o administrador do sistema.
-
-Esses privilégios são necessários para garantir a segurança e integridade do sistema, e são solicitados apenas quando necessário para operações críticas.
-
-**Pergunta:** O que significa "fortigate-vpn[20]: ESTABLISHED"?
-**Resposta:** Indica que a conexão VPN foi estabelecida com sucesso.
-
-**Pergunta:** A interface não responde ao clicar no toggle?
-**Resposta:** Verifique se o serviço IPsec está em execução e se as configurações estão corretas.
-
-**Pergunta:** O script de linha de comando funciona mas a GUI não?
-**Resposta:** Verifique se o PyQt5 está instalado corretamente e se o usuário tem permissão para exibir interfaces gráficas.
-
-## Empacotamento para Distribuições Linux
-
-O projeto inclui scripts para facilitar o empacotamento e instalação em distribuições Linux.
-
-### Scripts de Empacotamento e Instalação
-
-O projeto inclui os seguintes scripts:
-
-- `scripts/build-deb.sh`: Gera pacote .deb para distribuição
-
-### Como empacotar o projeto
-
-Execute o script de empacotamento:
+O projeto inclui um script para gerar pacotes .deb:
 
 ```bash
 ./scripts/build-deb.sh
 ```
 
-O script irá:
+O pacote inclui todos os componentes necessários e o arquivo de política do PolicyKit.
 
-1. Criar uma estrutura de pacote adequada
-2. Gerar um pacote .deb instalável com `dpkg`
-3. Incluir todos os módulos Python necessários
-4. Incluir o arquivo de política do PolicyKit
-5. Criar os wrappers executáveis em `/usr/bin/`
+## Desenvolvimento
 
-Após a execução, você encontrará o pacote em `build/vpn-client-fortigate_*.deb`.
-
-### Como instalar
-
-**Usando o pacote .deb gerado:**
+Para rodar em modo desenvolvimento:
 
 ```bash
-sudo dpkg -i build/vpn-client-fortigate_*.deb
-```
-
-### Como desinstalar
-
-**Se instalado com o pacote .deb:**
-```bash
-sudo dpkg -r vpn-client-fortigate
+cd app/bin
+python3 vpn-gui.py
 ```
 
 ---
 
 Desenvolvido por: DYSATECH
 © 2025 DYSATECH - Open Source
-
-## Modo Desenvolvimento
-
-Para executar o projeto em modo desenvolvimento:
-
-```bash
-cd /caminho/do/projeto
-python3 vpn-gui.py
-```
-
-Ou diretamente com o módulo:
-
-```bash
-cd /caminho/do/projeto
-python3 -m src.main
-```
-
-## Dependências
-
-O cliente VPN requer as seguintes dependências:
-
-- Python 3.6+
-- PyQt5
-- StrongSwan
-- pkexec (PolicyKit)
-
-Para instalar as dependências em sistemas Debian/Ubuntu:
-
-```bash
-sudo apt update
-sudo apt install python3-pyqt5 strongswan policykit-1
-```
-
-## Controle de Versão
-
-A versão atual do software está definida no arquivo `docs/VERSION`. Use esse arquivo para rastrear qual versão está instalada em seu sistema.

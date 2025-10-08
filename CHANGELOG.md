@@ -2,7 +2,7 @@
 
 Todas as alterações notáveis no projeto VPN Client FortiGate - IPsec serão documentadas neste arquivo.
 
-## [v0.1.0] - 2025-10-06
+## [v0.1.1] - 2025-10-07
 
 ### Adicionado
 - Interface gráfica para gerenciamento de conexão VPN FortiGate

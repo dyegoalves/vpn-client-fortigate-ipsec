@@ -46,16 +46,26 @@ O backend utiliza o StrongSwan para gerenciar as conexões IPsec/IKEv2. Inclui:
 ```bash
 sudo apt update
 sudo apt install strongswan strongswan-pki python3-pyqt5 policykit-1
+# plugins depedencias
+sudo apt install strongswan-swanctl
+sudo apt install libstrongswan-extra-plugins
+
 ```
 
 ### 2. Configurar IPsec
 
 Edite `sudo nano /etc/ipsec.conf` e adicione a conexão VPN:
 
+```
+sudo nano /etc/ipsec.conf
+```
+
 **Atenção**: Edite com seus dados, observando os campos entre `<>` e substitua-os.
 Além disso, observe que `ike` (fase 1) e `esp` (fase 2) são algoritmos de autenticação que precisam ser compatíveis com o servidor.
+As sub-redes configuradas para acesso são: 192.168.127.0/24, 192.168.126.0/24 e 10.10.10.0/24
+Para configurar o DNS da Google (8.8.8.8 e 8.8.4.4), adicione as opções leftdns conforme exemplo abaixo.
 
-```conf
+```bash
 config setup
     charondebug="ike 2, knl 2, cfg 2, mgr 2"
 
@@ -68,10 +78,11 @@ conn fortigate-vpn
     leftauth=eap-mschapv2
     eap_identity="<SEU_USUARIO_AQUI>"
     leftsourceip=%config
+    leftdns=8.8.8.8,8.8.4.4
     right=<IP_DO_SERVIDOR_VPN_AQUI>
     rightid=%any
     rightauth=psk
-    rightsubnet=0.0.0.0/0
+    rightsubnet=192.168.127.0/24,192.168.126.0/24,10.10.10.0/24
     auto=add
 ```
 
@@ -79,9 +90,17 @@ conn fortigate-vpn
 
 Em `sudo nano /etc/ipsec.secrets`, adicione:
 
-```conf
+```bash
+  sudo nano /etc/ipsec.secrets
+```
+
+```bash
 : PSK "<SUA_CHAVE_PSK_SECRET_AQUI>"
 <SEU_USUARIO_AQUI> : EAP "<SUA_SENNHA_USUARIO_AQUI>"
+```
+
+```bash
+  sudo chmod 600 /etc/ipsec.secrets
 ```
 
 > **Observação**: Substitua `<SEU_USUARIO_AQUI>` pelo mesmo nome de usuário usado na configuração do IPsec.
@@ -103,9 +122,6 @@ sudo ipsec down fortigate-vpn
 
 # Ver status
 sudo ipsec statusall
-
-# Ver conexões disponíveis
-sudo ipsec listconns
 
 # Verificar status de uma conexão específica
 sudo ipsec status
@@ -132,11 +148,35 @@ O aplicativo utiliza PolicyKit para execução de comandos com privilégios:
 
 O projeto inclui um script para gerar pacotes .deb:
 
+O script `build-deb.sh` automatiza a criação de um pacote .deb seguindo o padrão FHS, com todos os componentes necessários para o funcionamento do aplicativo.
+
+### Como gerar o pacote:
+
 ```bash
+sudo chmod +x ./scripts/build-deb.sh
 ./scripts/build-deb.sh
 ```
 
-O pacote inclui todos os componentes necessários e o arquivo de política do PolicyKit.
+### Estrutura do pacote:
+
+- `/usr/lib/vpn-client-fortigate/` - Arquivos principais do aplicativo
+- `/usr/bin/` - Atalhos (vpn-gui e vpn-start)
+- `/usr/share/applications/` - Arquivo .desktop
+- `/usr/share/pixmaps/` - Ícone do aplicativo
+- `/usr/share/doc/vpn-client-fortigate/` - Documentação
+- `/usr/share/polkit-1/actions/` - Política do PolicyKit
+
+### Dependências:
+
+- `python3`
+- `python3-pyqt5`
+- `policykit-1`
+
+### Instalação:
+
+```bash
+sudo dpkg -i build/vpn-client-fortigate_{versão}_amd64.deb
+```
 
 ## Desenvolvimento
 

@@ -1,0 +1,19 @@
+# VPN IPsec Client Requirements
+# This file contains the required packages for the VPN IPsec client application
+
+# Qt framework for GUI (required for the application)
+PySide6==6.6.0
+
+# For system-level operations
+# These would be used in a real implementation for VPN connection management
+psutil==5.9.0  # Uncomment if you need system monitoring capabilities
+# subprocess32==3.5.4  # For older Python versions, subprocess is part of stdlib
+
+# For configuration management
+configparser==6.0.0
+
+# For cryptography operations (if needed for VPN implementation)
+cryptography==41.0.0
+
+# For testing purposes
+pytest==7.4.0

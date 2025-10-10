@@ -462,10 +462,7 @@ class VPNIPSecClientApp(QMainWindow):
         self.toggle_switch.setStyleSheet(TOGGLE_STYLE_OFF)
         config_layout.addWidget(self.toggle_switch, 7, 2)
         
-        # Botão para atualizar configurações
-        refresh_config_btn = QPushButton('Atualizar Configurações')
-        refresh_config_btn.clicked.connect(self.load_ipsec_config)
-        config_layout.addWidget(refresh_config_btn, 8, 0, 1, 3)
+
         
         config_group.setLayout(config_layout)
         layout.addWidget(config_group)
@@ -493,12 +490,7 @@ class VPNIPSecClientApp(QMainWindow):
         self.status_btn = QPushButton('Atualizar Status')
         self.status_btn.clicked.connect(self.refresh_status)
         
-        # Botão para ver logs
-        view_logs_btn = QPushButton('Ver Logs Detalhados')
-        view_logs_btn.clicked.connect(self.view_logs)
-        
         buttons_layout.addWidget(self.status_btn)
-        buttons_layout.addWidget(view_logs_btn)
         buttons_layout.addStretch()  # Adiciona stretch para alinhar botões
         
         layout.addLayout(buttons_layout)
@@ -690,36 +682,7 @@ class VPNIPSecClientApp(QMainWindow):
         """Limpa o display de logs."""
         self.status_display.clear()
     
-    def view_logs(self):
-        """Abre uma nova janela com os logs detalhados."""
-        if self.log_file_path and os.path.exists(self.log_file_path):
-            # Criar uma janela para mostrar os logs
-            log_window = QMainWindow()
-            log_window.setWindowTitle(f'Logs para {self.current_conn_name}')
-            log_window.setGeometry(200, 200, 700, 500)
-            
-            central_widget = QWidget()
-            log_window.setCentralWidget(central_widget)
-            layout = QVBoxLayout(central_widget)
-            
-            # Ler o conteúdo do arquivo de log
-            try:
-                with open(self.log_file_path, 'r', encoding='utf-8') as log_file:
-                    content = log_file.read()
-            except Exception as e:
-                content = f'Erro ao ler o arquivo de log: {str(e)}'
-            
-            log_display = QTextEdit()
-            log_display.setPlainText(content)
-            log_display.setReadOnly(True)
-            
-            layout.addWidget(log_display)
-            
-            log_window.show()
-            return log_window
-        else:
-            QMessageBox.information(self, 'Logs', 'Nenhum arquivo de log disponível para visualização.')
-            return None
+
     
     def apply_system_theme(self):
         """Detecta e aplica o tema do sistema (claro/escuro) para o aplicativo."""

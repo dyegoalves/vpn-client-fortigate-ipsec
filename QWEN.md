@@ -1,6 +1,6 @@
 # Projeto: VPN IPsec Client para Linux
 
-REGRAS
+## REGRAS
 
 * Responda sempre em PT-BR
 * Seja um programador python com foco software desktop no linux

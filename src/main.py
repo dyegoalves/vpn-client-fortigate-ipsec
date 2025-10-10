@@ -15,18 +15,20 @@ os.environ['QT_QPA_PLATFORM'] = 'xcb'
 
 from PySide6.QtWidgets import (QApplication, QMainWindow, QWidget, QVBoxLayout, 
                                QHBoxLayout, QLabel, QPushButton, 
-                               QTextEdit, QGroupBox, QMessageBox, QStatusBar, QGridLayout)
+                               QTextEdit, QGroupBox, QMessageBox, QStatusBar, QGridLayout, 
+                               QComboBox, QScrollArea)
 from PySide6.QtCore import Qt, QTimer
 from PySide6.QtGui import QFont, QPalette, QColor
 
 
 # Constantes de configuração
-APP_TITLE = 'VPN IPsec Client v3 - Deepin Integration'
-WINDOW_SIZE = (800, 700)
+APP_TITLE = 'Cliente VPN IPsec Fortigate'
+WINDOW_SIZE = (900, 900)
 
 # Estilos CSS
-TOGGLE_STYLE_ON = "QPushButton { background-color: green; color: white; font-weight: bold; border-radius: 10px; min-width: 60px; }"
-TOGGLE_STYLE_OFF = "QPushButton { background-color: red; color: white; font-weight: bold; border-radius: 10px; min-width: 60px; }"
+TOGGLE_STYLE_ON = "QPushButton { background-color: green; color: white; font-weight: bold; border-radius: 10px; min-width: 60px; padding: 5px; }"
+TOGGLE_STYLE_OFF = "QPushButton { background-color: red; color: white; font-weight: bold; border-radius: 10px; min-width: 60px; padding: 5px; }"
+TOGGLE_STYLE_CONNECTING = "QPushButton { background-color: orange; color: white; font-weight: bold; border-radius: 10px; min-width: 60px; padding: 5px; }"
 
 # Estados de conexão
 CONNECTION_STATES = {
@@ -42,7 +44,7 @@ CONNECTION_STATES = {
 
 # Mensagens padrão
 DEFAULT_MESSAGES = {
-    'INIT': 'VPN IPsec Client v3 initialized.',
+    'INIT': 'vpn-ipsec-fortigate-client-linux initialized.',
     'CHECKING_CONFIG': 'Checking for existing IPsec configurations...',
     'NO_IPSEC': 'IPsec is not installed on this system.',
     'NO_CONFIGS': 'No IPsec configurations found in system files.',
@@ -104,7 +106,7 @@ class IPsecManager:
         return connections
     
     @staticmethod
-    def get_connection_details(conn_name: str) -> Tuple[str, str]:
+    def get_connection_details(conn_name: str) -> Tuple[str, str, dict]:
         """
         Obtém detalhes de uma conexão específica.
         
@@ -112,14 +114,87 @@ class IPsecManager:
             conn_name: Nome da conexão IPsec
             
         Returns:
-            Tuple[str, str]: (caminho_do_arquivo, endereco_do_servidor)
+            Tuple[str, str, dict]: (caminho_do_arquivo, endereco_do_servidor, detalhes_da_conexao)
         """
         config_file_path = IPsecManager._find_connection_file(conn_name)
         if not config_file_path:
-            return '', 'Server address not found'
-        
+            return '', 'Server address not found', {}
+
         server_addr = IPsecManager._get_server_address(config_file_path, conn_name)
-        return config_file_path, server_addr
+        connection_details = IPsecManager._get_connection_details(config_file_path, conn_name)
+        return config_file_path, server_addr, connection_details
+
+    @staticmethod
+    def _get_connection_details(config_file: str, conn_name: str) -> dict:
+        """
+        Extrai detalhes adicionais de uma conexão IPsec a partir do arquivo de configuração.
+        
+        Args:
+            config_file: Caminho do arquivo de configuração
+            conn_name: Nome da conexão IPsec
+            
+        Returns:
+            dict: Dicionário com detalhes da conexão
+        """
+        import re
+        details = {}
+        
+        try:
+            with open(config_file, 'r') as f:
+                content = f.read()
+
+            # Encontra a seção para esta conexão
+            pattern = rf'^\s*conn\s+{re.escape(conn_name)}\s*\n(.*?)(?=\n\s*conn\s+|\Z)'
+            matches = re.search(pattern, content, re.DOTALL | re.MULTILINE)
+
+            if matches:
+                conn_section = matches.group(1)
+
+                # Extrai diferentes parâmetros relevantes
+                authby_match = re.search(r'^\s*authby\s*=\s*([^\s#]+)', conn_section, re.MULTILINE)
+                if authby_match:
+                    details['authby'] = authby_match.group(1)
+                
+                ikelifetime_match = re.search(r'^\s*ikelifetime\s*=\s*([^\s#]+)', conn_section, re.MULTILINE)
+                if ikelifetime_match:
+                    details['ikelifetime'] = ikelifetime_match.group(1)
+                
+                keylife_match = re.search(r'^\s*keylife\s*=\s*([^\s#]+)', conn_section, re.MULTILINE)
+                if keylife_match:
+                    details['keylife'] = keylife_match.group(1)
+                
+                type_match = re.search(r'^\s*type\s*=\s*([^\s#]+)', conn_section, re.MULTILINE)
+                if type_match:
+                    details['type'] = type_match.group(1)
+                
+                left_match = re.search(r'^\s*left\s*=\s*([^\s#]+)', conn_section, re.MULTILINE)
+                if left_match:
+                    details['left'] = left_match.group(1)
+                
+                leftid_match = re.search(r'^\s*leftid\s*=\s*([^\s#]+)', conn_section, re.MULTILINE)
+                if leftid_match:
+                    details['leftid'] = leftid_match.group(1)
+                
+                rightsubnet_match = re.search(r'^\s*rightsubnet\s*=\s*([^\s#]+)', conn_section, re.MULTILINE)
+                if rightsubnet_match:
+                    details['rightsubnet'] = rightsubnet_match.group(1)
+                
+                ike_match = re.search(r'^\s*ike\s*=\s*([^\s#]+)', conn_section, re.MULTILINE)
+                if ike_match:
+                    details['ike'] = ike_match.group(1)
+                
+                esp_match = re.search(r'^\s*esp\s*=\s*([^\s#]+)', conn_section, re.MULTILINE)
+                if esp_match:
+                    details['esp'] = esp_match.group(1)
+
+                # Informações adicionais sobre o status da conexão
+                details['config_file'] = config_file
+                details['conn_name'] = conn_name
+
+        except Exception as e:
+            details['error'] = f'Error reading connection details: {str(e)}'
+
+        return details
 
     @staticmethod
     def _find_connection_file(conn_name: str) -> Optional[str]:
@@ -327,7 +402,7 @@ class VPNIPSecClientApp(QMainWindow):
         layout = QVBoxLayout(central_widget)
         
         # Título
-        title_label = QLabel('VPN IPsec Client v3')
+        title_label = QLabel('Cliente VPN IPsec Fortigate')
         title_font = QFont()
         title_font.setPointSize(16)
         title_font.setBold(True)
@@ -339,38 +414,75 @@ class VPNIPSecClientApp(QMainWindow):
         config_group = QGroupBox('Configuração IPsec')
         config_layout = QGridLayout()
         
+        # Seletor de Conexão
+        config_layout.addWidget(QLabel('Conexão IPsec:'), 0, 0)
+        self.conn_selector = QComboBox()
+        self.conn_selector.currentTextChanged.connect(self.on_connection_changed)
+        config_layout.addWidget(self.conn_selector, 0, 1, 1, 2)
+        
         # Nome da Conexão
-        config_layout.addWidget(QLabel('Nome da Conexão:'), 0, 0)
+        config_layout.addWidget(QLabel('Nome da Conexão:'), 1, 0)
         self.conn_name_label = QLabel('--')
-        config_layout.addWidget(self.conn_name_label, 0, 1)
+        config_layout.addWidget(self.conn_name_label, 1, 1, 1, 2)
         
         # Endereço do Servidor
-        config_layout.addWidget(QLabel('Endereço do Servidor:'), 1, 0)
+        config_layout.addWidget(QLabel('Endereço do Servidor:'), 2, 0)
         self.server_address_label = QLabel('--')
-        config_layout.addWidget(self.server_address_label, 1, 1)
+        config_layout.addWidget(self.server_address_label, 2, 1, 1, 2)
+        
+        # Caminho do Arquivo de Configuração
+        config_layout.addWidget(QLabel('Arquivo de Configuração:'), 3, 0)
+        self.config_file_label = QLabel('--')
+        config_layout.addWidget(self.config_file_label, 3, 1, 1, 2)
+        
+        # Tipo de Autenticação
+        config_layout.addWidget(QLabel('Tipo de Autenticação:'), 4, 0)
+        self.auth_type_label = QLabel('--')
+        config_layout.addWidget(self.auth_type_label, 4, 1, 1, 2)
+        
+        # Protocolos IKE/ESP
+        config_layout.addWidget(QLabel('Protocolos (IKE/ESP):'), 5, 0)
+        self.protocols_label = QLabel('--')
+        config_layout.addWidget(self.protocols_label, 5, 1, 1, 2)
+        
+        # Sub-rede Remota
+        config_layout.addWidget(QLabel('Sub-rede Remota:'), 6, 0)
+        self.rightsubnet_label = QLabel('--')
+        config_layout.addWidget(self.rightsubnet_label, 6, 1, 1, 2)
         
         # Status
-        config_layout.addWidget(QLabel('Status:'), 2, 0)
+        config_layout.addWidget(QLabel('Status:'), 7, 0)
         self.status_label = QLabel(CONNECTION_STATES['NOT_CONFIGURED'])
-        config_layout.addWidget(self.status_label, 2, 1)
+        config_layout.addWidget(self.status_label, 7, 1)
         
         # Toggle Switch
         self.toggle_switch = QPushButton('OFF')
         self.toggle_switch.setCheckable(True)
         self.toggle_switch.clicked.connect(self.toggle_connection)
         self.toggle_switch.setStyleSheet(TOGGLE_STYLE_OFF)
-        config_layout.addWidget(self.toggle_switch, 2, 2)
+        config_layout.addWidget(self.toggle_switch, 7, 2)
+        
+        # Botão para atualizar configurações
+        refresh_config_btn = QPushButton('Atualizar Configurações')
+        refresh_config_btn.clicked.connect(self.load_ipsec_config)
+        config_layout.addWidget(refresh_config_btn, 8, 0, 1, 3)
         
         config_group.setLayout(config_layout)
         layout.addWidget(config_group)
         
         # Log de status
-        status_group = QGroupBox('Status da Conexão')
+        status_group = QGroupBox('Status da Conexão e Logs')
         status_layout = QVBoxLayout()
         
         self.status_display = QTextEdit()
         self.status_display.setReadOnly(True)
+        self.status_display.setMaximumHeight(200)
         status_layout.addWidget(self.status_display)
+        
+        # Botão para limpar logs
+        clear_logs_btn = QPushButton('Limpar Logs')
+        clear_logs_btn.clicked.connect(self.clear_logs)
+        status_layout.addWidget(clear_logs_btn)
         
         status_group.setLayout(status_layout)
         layout.addWidget(status_group)
@@ -381,7 +493,12 @@ class VPNIPSecClientApp(QMainWindow):
         self.status_btn = QPushButton('Atualizar Status')
         self.status_btn.clicked.connect(self.refresh_status)
         
+        # Botão para ver logs
+        view_logs_btn = QPushButton('Ver Logs Detalhados')
+        view_logs_btn.clicked.connect(self.view_logs)
+        
         buttons_layout.addWidget(self.status_btn)
+        buttons_layout.addWidget(view_logs_btn)
         buttons_layout.addStretch()  # Adiciona stretch para alinhar botões
         
         layout.addLayout(buttons_layout)
@@ -407,22 +524,38 @@ class VPNIPSecClientApp(QMainWindow):
             connections = self.ipsec_mgr.get_ipsec_connections()
             
             if connections:
+                # Limpa o seletor de conexões e adiciona as novas
+                self.conn_selector.clear()
+                self.conn_selector.addItems(connections)
+                
                 # Usa a primeira conexão encontrada
                 first_conn = connections[0]
                 self.current_conn_name = first_conn
                 self.conn_name_label.setText(first_conn)
                 
                 # Obtém detalhes da conexão
-                _, server_addr = self.ipsec_mgr.get_connection_details(first_conn)
+                config_file_path, server_addr, conn_details = self.ipsec_mgr.get_connection_details(first_conn)
                 self.server_address_label.setText(server_addr)
+                self.config_file_label.setText(config_file_path)
+                
+                # Preenche os novos campos com detalhes da conexão
+                self.auth_type_label.setText(conn_details.get('authby', '--'))
+                protocols = f"{conn_details.get('ike', '--')}/{conn_details.get('esp', '--')}"
+                self.protocols_label.setText(protocols)
+                self.rightsubnet_label.setText(conn_details.get('rightsubnet', '--'))
                 
                 # Verifica o status da conexão
                 self.refresh_connection_status()
                 
                 self.add_status_message(f'Loaded IPsec configuration: {first_conn}')
             else:
+                self.conn_selector.clear()
                 self.conn_name_label.setText('No configurations found')
                 self.server_address_label.setText('N/A')
+                self.config_file_label.setText('N/A')
+                self.auth_type_label.setText('N/A')
+                self.protocols_label.setText('N/A')
+                self.rightsubnet_label.setText('N/A')
                 self.status_label.setText(CONNECTION_STATES['NO_CONFIG'])
                 self.add_status_message(DEFAULT_MESSAGES['NO_CONFIGS'])
                 
@@ -430,7 +563,31 @@ class VPNIPSecClientApp(QMainWindow):
             self.add_status_message(f'Error loading IPsec configuration: {str(e)}')
             self.conn_name_label.setText(CONNECTION_STATES['ERROR'])
             self.server_address_label.setText('N/A')
+            self.config_file_label.setText('N/A')
+            self.auth_type_label.setText('N/A')
+            self.protocols_label.setText('N/A')
+            self.rightsubnet_label.setText('N/A')
             self.status_label.setText(CONNECTION_STATES['ERROR'])
+    
+    def on_connection_changed(self, conn_name):
+        """Atualiza a interface quando a conexão selecionada muda."""
+        if conn_name:
+            self.current_conn_name = conn_name
+            self.conn_name_label.setText(conn_name)
+            
+            # Obtém detalhes da nova conexão
+            config_file_path, server_addr, conn_details = self.ipsec_mgr.get_connection_details(conn_name)
+            self.server_address_label.setText(server_addr)
+            self.config_file_label.setText(config_file_path)
+            
+            # Preenche os novos campos com detalhes da conexão
+            self.auth_type_label.setText(conn_details.get('authby', '--'))
+            protocols = f"{conn_details.get('ike', '--')}/{conn_details.get('esp', '--')}"
+            self.protocols_label.setText(protocols)
+            self.rightsubnet_label.setText(conn_details.get('rightsubnet', '--'))
+            
+            # Verifica o status da nova conexão
+            self.refresh_connection_status()
     
     def refresh_connection_status(self):
         """Atualiza o status da conexão atual."""
@@ -455,9 +612,14 @@ class VPNIPSecClientApp(QMainWindow):
         # Atualiza o toggle switch conforme o estado real
         self.toggle_switch.setChecked(is_connected)
         self.toggle_switch.setText('ON' if is_connected else 'OFF')
-        self.toggle_switch.setStyleSheet(
-            TOGGLE_STYLE_ON if is_connected else TOGGLE_STYLE_OFF
-        )
+        if status == CONNECTION_STATES['CONNECTING']:
+            self.toggle_switch.setStyleSheet(TOGGLE_STYLE_CONNECTING)
+        elif status == CONNECTION_STATES['DISCONNECTING']:
+            self.toggle_switch.setStyleSheet(TOGGLE_STYLE_CONNECTING)
+        else:
+            self.toggle_switch.setStyleSheet(
+                TOGGLE_STYLE_ON if is_connected else TOGGLE_STYLE_OFF
+            )
     
     def toggle_connection(self):
         """Alterna a conexão IPsec entre ON/OFF."""
@@ -468,13 +630,13 @@ class VPNIPSecClientApp(QMainWindow):
         if self.toggle_switch.isChecked():
             # Liga
             self.toggle_switch.setText('ON')
-            self.toggle_switch.setStyleSheet(TOGGLE_STYLE_ON)
+            self.toggle_switch.setStyleSheet(TOGGLE_STYLE_CONNECTING)
             self.status_label.setText(CONNECTION_STATES['CONNECTING'])
             self.connect_vpn()
         else:
             # Desliga
             self.toggle_switch.setText('OFF')
-            self.toggle_switch.setStyleSheet(TOGGLE_STYLE_OFF)
+            self.toggle_switch.setStyleSheet(TOGGLE_STYLE_CONNECTING)
             self.status_label.setText(CONNECTION_STATES['DISCONNECTING'])
             self.disconnect_vpn()
     
@@ -523,8 +685,42 @@ class VPNIPSecClientApp(QMainWindow):
         self.refresh_connection_status()
         current_status = self.status_label.text()
         self.add_status_message(f'Current status: {current_status}')
-        QMessageBox.information(self, 'VPN Status', f'Current status: {current_status}')
         
+    def clear_logs(self):
+        """Limpa o display de logs."""
+        self.status_display.clear()
+    
+    def view_logs(self):
+        """Abre uma nova janela com os logs detalhados."""
+        if self.log_file_path and os.path.exists(self.log_file_path):
+            # Criar uma janela para mostrar os logs
+            log_window = QMainWindow()
+            log_window.setWindowTitle(f'Logs para {self.current_conn_name}')
+            log_window.setGeometry(200, 200, 700, 500)
+            
+            central_widget = QWidget()
+            log_window.setCentralWidget(central_widget)
+            layout = QVBoxLayout(central_widget)
+            
+            # Ler o conteúdo do arquivo de log
+            try:
+                with open(self.log_file_path, 'r', encoding='utf-8') as log_file:
+                    content = log_file.read()
+            except Exception as e:
+                content = f'Erro ao ler o arquivo de log: {str(e)}'
+            
+            log_display = QTextEdit()
+            log_display.setPlainText(content)
+            log_display.setReadOnly(True)
+            
+            layout.addWidget(log_display)
+            
+            log_window.show()
+            return log_window
+        else:
+            QMessageBox.information(self, 'Logs', 'Nenhum arquivo de log disponível para visualização.')
+            return None
+    
     def apply_system_theme(self):
         """Detecta e aplica o tema do sistema (claro/escuro) para o aplicativo."""
         # Obtém a paleta padrão do sistema
@@ -643,7 +839,6 @@ class VPNIPSecClientApp(QMainWindow):
             except Exception:
                 pass
         self.log_file_path = None
-
 
 def main() -> None:
     """

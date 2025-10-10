@@ -12,6 +12,7 @@ Create a VPN IPsec Client application for Linux that provides a GUI interface wi
 - **IPsec Commands**: Uses `sudo ipsec up/down/status` commands for connection management
 - **Toggle Switch**: Green for ON (Connected), Red for OFF (Disconnected) with CSS styling
 - **Platform Specific**: Uses 'xcb' platform plugin for Deepin compatibility
+- **Enhanced UI**: Connection selector, detailed connection information (auth type, protocols, remote subnet), expandable UI with more details
 
 ## Recent Actions
 - [DONE] Created initial Tkinter application and migrated to PyQt5, then to PySide6
@@ -23,6 +24,11 @@ Create a VPN IPsec Client application for Linux that provides a GUI interface wi
 - [DONE] Reduced interface logs and implemented file logging only when ON
 - [DONE] Created organized code structure with proper typing and documentation
 - [DONE] Fixed Qt platform plugin issues with dxcb/xcb compatibility
+- [DONE] Implemented UI/UX improvements including connection selector and detailed connection information
+- [DONE] Added more connection details (authentication type, protocols, remote subnet)
+- [DONE] Completed final testing and validation
+- [DONE] Updated documentation
+- [DONE] Created QWEN.md, GEMINI.md and updated PROJECT_SUMMARY.md files
 
 ## Current Plan
 - [DONE] Complete the VPN IPsec Client with toggle switch and status display
@@ -30,11 +36,11 @@ Create a VPN IPsec Client application for Linux that provides a GUI interface wi
 - [DONE] Add logging functionality that only saves when ON
 - [DONE] Reduce interface log output
 - [DONE] Ensure proper Deepin integration and system theme compatibility
-- [TODO] Finalize any remaining UI/UX improvements
-- [TODO] Add additional IPsec configuration options if needed
-- [TODO] Complete final testing and documentation
+- [DONE] Finalize UI/UX improvements
+- [DONE] Add additional IPsec configuration options
+- [DONE] Complete final testing and documentation
 
 ---
 
 ## Summary Metadata
-**Update time**: 2025-10-10T01:59:28.245Z 
+**Update time**: 2025-10-10T03:00:09.255Z 

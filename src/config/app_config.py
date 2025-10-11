@@ -1,0 +1,48 @@
+"""
+Configuration Module
+
+This file contains all the constants and configuration settings for the VPN IPsec Client application.
+"""
+
+import os
+
+# --- Application Info ---
+APP_TITLE = "Cliente VPN IPsec Fortigate"
+WINDOW_SIZE = (500, 650)
+
+os.environ["QT_QPA_PLATFORM"] = "xcb"
+
+# --- UI Styles (CSS) ---
+TOGGLE_STYLE_ON = "QPushButton { background-color: green; color: white; font-weight: bold; border-radius: 10px; min-width: 60px; padding: 5px; }"
+TOGGLE_STYLE_OFF = "QPushButton { background-color: red; color: white; font-weight: bold; border-radius: 10px; min-width: 60px; padding: 5px; }"
+TOGGLE_STYLE_CONNECTING = "QPushButton { background-color: orange; color: white; font-weight: bold; border-radius: 10px; min-width: 60px; padding: 5px; }"
+
+# --- Connection States ---
+CONNECTION_STATES = {
+    "CONNECTED": "Connected",
+    "DISCONNECTED": "Disconnected",
+    "CONNECTING": "Connecting...",
+    "DISCONNECTING": "Disconnecting...",
+    "NOT_CONFIGURED": "Not Configured",
+    "NO_CONFIG": "No config",
+    "UNAVAILABLE": "Unavailable",
+    "ERROR": "Error",
+}
+
+# --- Default Messages ---
+DEFAULT_MESSAGES = {
+    "INIT": "vpn-ipsec-fortigate-client-linux initialized.",
+    "CHECKING_CONFIG": "Checking for existing IPsec configurations...",
+    "NO_IPSEC": "IPsec is not installed on this system.",
+    "NO_CONFIGS": "No IPsec configurations found in system files.",
+    "READY": "VPN IPsec Client ready",
+}
+
+# --- IPsec Configuration Paths ---
+IPSEC_CONFIG_PATHS = ["/etc/ipsec.conf"]
+IPSEC_D_PATH = "/etc/ipsec.d/"
+
+# --- Log Directory ---
+LOGS_DIR = os.path.expanduser("~/.vpn_ipsec_logs")
+if not os.path.exists(LOGS_DIR):
+    os.makedirs(LOGS_DIR)

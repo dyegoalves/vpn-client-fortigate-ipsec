@@ -139,6 +139,29 @@ conn fortigate-vpn  # Nome da conexão, pode ser alterado
 
 Após seguir esses passos, a aplicação cliente VPN IPsec deverá detectar e permitir que você gerencie suas conexões configuradas.
 
+### Gerenciamento Manual de Conexões IPsec
+
+Embora a aplicação forneça uma interface gráfica para gerenciar as conexões, você também pode controlá-las manualmente via linha de comando, utilizando o nome da conexão configurada no `ipsec.conf` (por exemplo, `fortigate-vpn`).
+
+*   **Iniciar uma conexão VPN:**
+    ```bash
+    sudo ipsec up <nome-da-conexao>
+    ```
+    Exemplo: `sudo ipsec up fortigate-vpn`
+
+*   **Parar uma conexão VPN:**
+    ```bash
+    sudo ipsec down <nome-da-conexao>
+    ```
+    Exemplo: `sudo ipsec down fortigate-vpn`
+
+*   **Verificar o status de todas as conexões ou de uma específica:**
+    ```bash
+    sudo ipsec status # Para todas as conexões
+    sudo ipsec status <nome-da-conexao> # Para uma conexão específica
+    ```
+    Exemplo: `sudo ipsec status fortigate-vpn`
+
 ### Configuração
 
 1. A aplicação detecta automaticamente as conexões IPsec disponíveis em `/etc/ipsec.conf` e `/etc/ipsec.d/*.conf`.

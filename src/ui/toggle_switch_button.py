@@ -12,10 +12,9 @@ class ToggleSwitchButton(QWidget):
         self,
         width=72,
         height=36,
-        on_color="#4cd964",
-        off_color="#bbbbbb",
+        on_color="#4cd964",  # Verde para "Conectado"
+        off_color="#d9534f",  # Vermelho para "Desconectado"
         connecting_color="#FFA500",
-        disconnecting_color="#FF6600",
     ):
         super().__init__()
         self.setFixedSize(width, height)
@@ -24,15 +23,14 @@ class ToggleSwitchButton(QWidget):
         self._on_color = on_color
         self._off_color = off_color
         self._connecting_color = connecting_color
-        self._disconnecting_color = disconnecting_color
 
         self._checked = False
         self._thumb_pos = 2.0
         self._target = 2.0
         self._speed = 0.15
 
-        # Novo estado para conexão IPsec
-        self._current_state = "DISCONNECTED"  # Pode ser "CONNECTED", "DISCONNECTED", "CONNECTING", "DISCONNECTING"
+        # Simplificar para 3 estados
+        self._current_state = "DISCONNECTED"  # Pode ser "CONNECTED", "DISCONNECTED", "CONNECTING"
 
         self._timer = QTimer()
         self._timer.setInterval(15)
@@ -59,14 +57,17 @@ class ToggleSwitchButton(QWidget):
         self._current_state = state
 
         if state == "CONNECTED":
+            # Conexão estabelecida - toggle deve estar no estado ON
             self._checked = True
             self._target = self._width - self._height + 2
         elif state == "DISCONNECTED":
+            # Conexão encerrada - toggle deve estar no estado OFF
             self._checked = False
             self._target = 2
-        elif state in ["CONNECTING", "DISCONNECTING"]:
-            # Não alterar o checked state durante transições, apenas a aparência
-            pass  # Manter o estado atual e mudar apenas a cor visualmente
+        elif state == "CONNECTING":
+            # Iniciando conexão - o thumb se move para posição de "conectado"
+            self._target = self._width - self._height + 2
+            self._checked = True
 
         self.update()
 
@@ -84,13 +85,11 @@ class ToggleSwitchButton(QWidget):
 
         # Determinar cor de fundo com base no estado
         if self._current_state == "CONNECTED" or (
-            self._current_state not in ["CONNECTING", "DISCONNECTING"] and self._checked
+            self._current_state not in ["CONNECTING"] and self._checked
         ):
             color = QColor(self._on_color)  # Verde quando ON ou CONNECTED
         elif self._current_state == "CONNECTING":
             color = QColor(self._connecting_color)  # Laranja durante conexão
-        elif self._current_state == "DISCONNECTING":
-            color = QColor(self._disconnecting_color)  # Laranja durante desconexão
         else:
             color = QColor(self._off_color)  # Cinza quando OFF
 

@@ -219,19 +219,6 @@ class MainWindow(QMainWindow):
             self.config_widget.update_status(CONNECTION_STATES["CONNECTING"], False)
             self.connect_vpn()
         else:
-            # Verificar se já está desconectando ou desconectado
-            current_status, _ = self.connection_manager.get_connection_status(
-                self.current_conn_name
-            )
-            if current_status == CONNECTION_STATES["DISCONNECTING"]:
-                # Já está tentando desconectar, não fazer nada
-                return
-            elif current_status == CONNECTION_STATES["DISCONNECTED"]:
-                # Se já está desconectado, atualizar o status para refletir o estado correto
-                QTimer.singleShot(100, lambda: self.config_widget.update_status(CONNECTION_STATES["DISCONNECTED"], False))
-                return
-
-            self.config_widget.update_status(CONNECTION_STATES["DISCONNECTING"], False)
             self.disconnect_vpn()
 
     def connect_vpn(self):

@@ -30,7 +30,7 @@ from PySide6.QtWidgets import (
     QScrollArea,
 )
 from PySide6.QtCore import Qt, QTimer
-from PySide6.QtGui import QFont, QPalette, QColor
+from PySide6.QtGui import QFont, QPalette, QColor, QIcon
 
 
 # Constantes de configuração
@@ -464,6 +464,15 @@ class VPNIPSecClientApp(QMainWindow):
         """Inicializa a interface do usuário."""
         self.setWindowTitle(APP_TITLE)
         self.setMinimumSize(*WINDOW_SIZE)  # Define um tamanho mínimo para a janela
+        
+        # Define o ícone da janela
+        script_dir = os.path.dirname(os.path.realpath(__file__))
+        icon_path = os.path.join(script_dir, 'assets', 'icon.svg')
+        icon = QIcon(icon_path)
+        if icon.isNull():
+            print(f"AVISO: Falha ao carregar o ícone do aplicativo em: {icon_path}")
+        self.setWindowIcon(icon)
+        
         # Centralizar a janela na tela
         self.center_window()
 
@@ -591,10 +600,6 @@ class VPNIPSecClientApp(QMainWindow):
         # Layout dos botões
         buttons_layout = QHBoxLayout()
 
-        self.status_btn = QPushButton("Atualizar Status")
-        self.status_btn.clicked.connect(self.refresh_status)
-
-        buttons_layout.addWidget(self.status_btn)
         buttons_layout.addStretch()  # Adiciona stretch para alinhar botões
 
         layout.addLayout(buttons_layout)
@@ -806,11 +811,7 @@ class VPNIPSecClientApp(QMainWindow):
         else:
             self.add_status_message(message, show_in_ui=True)
 
-    def refresh_status(self):
-        """Atualiza o status atual da conexão VPN."""
-        self.refresh_connection_status()
-        current_status = self.status_label.text()
-        self.add_status_message(f"Current status: {current_status}")
+
 
     def clear_logs(self):
         """Limpa o display de logs."""

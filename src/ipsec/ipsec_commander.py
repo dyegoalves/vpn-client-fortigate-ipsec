@@ -1,4 +1,5 @@
 import subprocess
+import re
 from typing import Tuple
 
 
@@ -13,22 +14,21 @@ class IPsecCommander:
         """
         try:
             result = subprocess.run(
-                ["sudo", "ipsec", "up", conn_name], capture_output=True, text=True
+                ["sudo", "ipsec", "up", conn_name],
+                capture_output=True,
+                text=True,
+                check=True,
             )
-            if result.returncode == 0:
-                return True, f'IPsec connection "{conn_name}" initiated successfully.'
-            else:
-                return (
-                    False,
-                    f'Failed to initiate connection "{conn_name}": {result.stderr.strip()}',
-                )
+            return True, f'Conexão IPsec "{conn_name}" iniciada com sucesso.'
         except FileNotFoundError:
             return (
                 False,
-                "Error: IPsec command not found. Please ensure IPsec is installed and in PATH.",
+                "Erro: Comando 'ipsec' não encontrado. Verifique se o StrongSwan/LibreSwan está instalado e no PATH.",
             )
+        except subprocess.CalledProcessError as e:
+            return False, f'Falha ao iniciar conexão "{conn_name}": {e.stderr.strip()}'
         except Exception as e:
-            return False, f"Error initiating connection: {str(e)}"
+            return False, f"Erro inesperado ao iniciar conexão: {str(e)}"
 
     def disconnect_connection(self, conn_name: str) -> Tuple[bool, str]:
         """
@@ -36,22 +36,21 @@ class IPsecCommander:
         """
         try:
             result = subprocess.run(
-                ["sudo", "ipsec", "down", conn_name], capture_output=True, text=True
+                ["sudo", "ipsec", "down", conn_name],
+                capture_output=True,
+                text=True,
+                check=True,
             )
-            if result.returncode == 0:
-                return True, f'IPsec connection "{conn_name}" terminated successfully.'
-            else:
-                return (
-                    False,
-                    f'Failed to terminate connection "{conn_name}": {result.stderr.strip()}',
-                )
+            return True, f'Conexão IPsec "{conn_name}" terminada com sucesso.'
         except FileNotFoundError:
             return (
                 False,
-                "Error: IPsec command not found. Please ensure IPsec is installed and in PATH.",
+                "Erro: Comando 'ipsec' não encontrado. Verifique se o StrongSwan/LibreSwan está instalado e no PATH.",
             )
+        except subprocess.CalledProcessError as e:
+            return False, f'Falha ao terminar conexão "{conn_name}": {e.stderr.strip()}'
         except Exception as e:
-            return False, f"Error terminating connection: {str(e)}"
+            return False, f"Erro inesperado ao terminar conexão: {str(e)}"
 
     def get_connection_status(self, conn_name: str) -> Tuple[str, bool]:
         """
@@ -59,26 +58,27 @@ class IPsecCommander:
         """
         try:
             result = subprocess.run(
-                ["sudo", "ipsec", "status"], capture_output=True, text=True
+                ["sudo", "ipsec", "status"], capture_output=True, text=True, check=True
             )
-            if result.returncode == 0:
-                status_output = result.stdout
-                is_connected = False
-                status_message = "Disconnected"
+            status_output = result.stdout
 
-                if conn_name in status_output:
-                    if (
-                        "ESTABLISHED" in status_output
-                        or "IPSEC SA established" in status_output
-                        or "eroute owner" in status_output
-                    ):
-                        is_connected = True
-                        status_message = "Connected"
-                
-                return status_message, is_connected
+            if re.search(
+                rf"^{re.escape(conn_name)}\[\d+\]: ESTABLISHED",
+                status_output,
+                re.MULTILINE,
+            ):
+                return "Conectado", True
+            elif re.search(
+                rf"^{re.escape(conn_name)}\[\d+\]: CONNECTING",
+                status_output,
+                re.MULTILINE,
+            ):
+                return "Conectando", False
             else:
-                return "Disconnected", False
+                return "Desconectado", False
         except FileNotFoundError:
-            return "Disconnected", False
-        except Exception: # Captura qualquer outra exceção
-            return "Disconnected", False
+            return "Erro: Comando 'ipsec' não encontrado.", False
+        except subprocess.CalledProcessError as e:
+            return f"Erro ao obter status: {e.stderr.strip()}", False
+        except Exception as e:
+            return f"Erro inesperado ao obter status: {str(e)}", False

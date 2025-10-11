@@ -1,80 +1,98 @@
-# vpn-ipsec-fortigate-client-linux
+# Cliente VPN IPsec para Linux
 
-A graphical user interface application for managing IPsec VPN connections on Linux systems built with Qt (PySide6). This application provides an intuitive interface for connecting to, disconnecting from, and monitoring IPsec VPN connections with excellent integration with Linux desktop environments like Deepin.
+Uma aplicação com interface gráfica para gerenciar conexões VPN IPsec em sistemas Linux, construída com Qt (PySide6). Esta aplicação oferece uma interface intuitiva para conectar, desconectar e monitorar conexões VPN IPsec, com excelente integração com ambientes de desktop Linux como o Deepin.
 
-## Features
+## Descrição
 
-- Qt-based graphical interface for managing VPN connections
-- Connection configuration with automatic detection of available IPsec connections
-- Detailed connection information (server address, authentication type, IKE/ESP protocols, remote subnet)
-- Connection status monitoring with visual indicators (red/green toggle switch)
-- Connection logs with reduced UI output and file logging when connected
-- Connect, disconnect, and status check functionality
-- System theme integration (light/dark mode support)
-- Deepin desktop environment compatibility
-- Detailed connection details display
+Este projeto implementa um cliente VPN IPsec com interface gráfica para sistemas Linux, com foco especial em integração com o ambiente desktop Deepin. O aplicativo permite gerenciar conexões IPsec VPN com um toggle switch intuitivo que mostra o status da conexão.
 
-## Requirements
+## Funcionalidades
 
-- Python 3.6 or higher
+- Interface gráfica com toggle switch para conexão/desconexão
+- Leitura automática de configurações IPsec de `/etc/ipsec.conf` e `/etc/ipsec.d/*.conf`
+- Exibição de informações detalhadas das conexões (endereço do servidor, tipo de autenticação, protocolos IKE/ESP, sub-rede remota)
+- Monitoramento do status da conexão com indicadores visuais (toggle switch vermelho/verde)
+- Logs de conexão com saída reduzida na UI e salvamento em arquivo apenas quando conectado
+- Funcionalidades de conectar, desconectar e verificar status
+- Integração com o tema do sistema (suporte a modo claro/escuro)
+- Compatibilidade com o ambiente de desktop Deepin
+- Exibição de detalhes de conexão detalhados
+
+## Arquitetura
+
+- **Tecnologia Principal**: PySide6 para a interface gráfica
+- **Linguagem**: Python 3.6+
+- **Framework**: Qt com integração Deepin
+- **Estrutura**: Separação clara entre lógica de negócios (`IPsecManager`) e interface (`VPNIPSecClientApp`)
+
+## Componentes Principais
+
+- `IPsecManager`: Gerencia todas as operações IPsec (leitura de configurações, status, conexão/desconexão)
+- `VPNIPSecClientApp`: Interface gráfica principal com PySide6
+- Sistema de logging que opera conforme o estado de conexão
+
+## Requisitos
+
+- Python 3.6 ou superior
 - PySide6
-- Linux operating system with IPsec utilities (strongswan or libreswan)
-- Administrative privileges for IPsec connection management
+- Sistema operacional Linux com utilitários IPsec (strongswan ou libreswan)
+- Privilégios administrativos para gerenciamento de conexão IPsec
 
-## Installation
+## Instalação
 
-1. Clone or download this repository
-2. Navigate to the project directory
-3. Install the required packages:
+1.  Clone ou baixe este repositório.
+2.  Navegue até o diretório do projeto.
+3.  Instale os pacotes necessários:
 
-```bash
-pip install --break-system-packages -r requirements.txt  # or use a virtual environment
-```
+    ```bash
+    pip install --break-system-packages -r requirements.txt  # ou use um ambiente virtual
+    ```
 
-## Usage
+4.  Instale o StrongSwan e seus plugins (dependências do sistema):
 
-To run the application:
+    ```bash
+    sudo apt update
+    sudo apt install strongswan strongswan-pki strongswan-swanctl libstrongswan-extra-plugins
+    ```
+
+## Uso
+
+Para executar a aplicação:
 
 ```bash
 cd src
 python main.py
 ```
 
-### Configuration
+### Configuração
 
-1. The application automatically detects available IPsec connections from `/etc/ipsec.conf` and `/etc/ipsec.d/*.conf`
-2. Select the desired connection from the dropdown menu
-3. View connection details (server address, authentication type, protocols, etc.)
-4. Use the toggle switch or connect/disconnect buttons to control the VPN connection
-5. Monitor connection status and logs in the interface
-6. Access detailed logs through the "Ver Logs Detalhados" button
+1.  A aplicação detecta automaticamente as conexões IPsec disponíveis em `/etc/ipsec.conf` e `/etc/ipsec.d/*.conf`.
+2.  Selecione a conexão desejada no menu suspenso.
+3.  Visualize os detalhes da conexão (endereço do servidor, tipo de autenticação, protocolos, etc.).
+4.  Use o toggle switch ou os botões de conectar/desconectar para controlar a conexão VPN.
+5.  Monitore o status da conexão e os logs na interface.
+6.  Acesse logs detalhados através do botão "Ver Logs Detalhados".
 
-## Application Structure
+## Notas de Implementação
 
-```
-vpn-ipsec-fortigate-client-linux/
-├── README.md
-├── requirements.txt
-└── src/
-    └── main.py
-```
+Este é um frontend GUI Qt para um cliente VPN IPsec. O Qt foi escolhido por sua excelente integração com ambientes de desktop Linux, particularmente o Deepin, proporcionando:
 
-## Implementation Notes
+- Aparência nativa que corresponde ao tema do sistema
+- Melhor integração com os recursos do ambiente de desktop
+- Consistência visual aprimorada em diferentes distribuições Linux
 
-This is a Qt GUI frontend for a VPN IPsec client. Qt was chosen for its excellent integration with Linux desktop environments, particularly Deepin, providing:
+A aplicação se integra com comandos IPsec de nível de sistema (`ipsec up/down/status`) para gerenciar conexões e inclui:
 
-- Native look and feel that matches the system theme
-- Better integration with desktop environment features
-- Improved visual consistency across different Linux distributions
+- Configuração de sistema adequada para compatibilidade com Deepin (plataforma xcb)
+- Detecção automática de tema e suporte a modo escuro
+- Toggle switch com codificação de cores (vermelho para desconectado, verde para conectado)
+- Registro baseado em arquivo que só salva quando conectado
+- Saída de log visual reduzida na interface, conforme solicitado
 
-The application integrates with system-level IPsec commands (ipsec up/down/status) to manage connections and includes:
+## Status
 
-- Proper system configuration for Deepin compatibility (xcb platform)
-- Automatic theme detection and dark mode support
-- Toggle switch with color-coding (red for disconnected, green for connected)
-- File-based logging that only saves when connected
-- Reduced visual log output in the interface as requested
+Projeto completo com todas as funcionalidades implementadas e testadas.
 
-## License
+## Licença
 
-This project is open source and available under the MIT License.
+Este projeto é de código aberto e está disponível sob a Licença MIT.

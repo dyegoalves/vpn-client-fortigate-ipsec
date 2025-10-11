@@ -3,25 +3,22 @@ from PySide6.QtWidgets import (
     QVBoxLayout,
     QHBoxLayout,
     QLabel,
-    QPushButton,
     QComboBox,
     QGridLayout,
     QGroupBox,
+    QSpacerItem,
+    QSizePolicy,
 )
 from PySide6.QtCore import Qt, Signal
 from PySide6.QtGui import QFont
 
-from ..config.app_config import (
-    TOGGLE_STYLE_ON,
-    TOGGLE_STYLE_OFF,
-    TOGGLE_STYLE_CONNECTING,
-    CONNECTION_STATES,
-)
+from ..config.app_config import CONNECTION_STATES
+from .toggle_switch_button import ToggleSwitchButton  # Importar o novo widget
 
 
 class ConnectionConfigWidget(QGroupBox):
     connection_changed = Signal(str)
-    toggle_requested = Signal()
+    toggle_requested = Signal(bool)
 
     def __init__(self, connection_manager, parent=None):
         super().__init__("Configuração IPsec", parent)
@@ -60,20 +57,60 @@ class ConnectionConfigWidget(QGroupBox):
         self.rightsubnet_label = QLabel("--")
         config_layout.addWidget(self.rightsubnet_label, 6, 1, 1, 2)
 
-        config_layout.addWidget(QLabel("Status:"), 7, 0)
-        self.status_label = QLabel(CONNECTION_STATES["NOT_CONFIGURED"])
-        config_layout.addWidget(self.status_label, 7, 1)
+        # Layout para o título do status para alinhamento
+        status_title_layout = QVBoxLayout()
+        status_title_layout.setContentsMargins(0, 0, 0, 0)
+        status_title_layout.addItem(
+            QSpacerItem(0, 20, QSizePolicy.Minimum, QSizePolicy.Fixed)
+        )
+        status_title_layout.addWidget(QLabel("Status:"))
+        status_title_layout.setAlignment(Qt.AlignTop)
+        config_layout.addLayout(status_title_layout, 7, 0)
 
-        self.toggle_switch = QPushButton("OFF")
-        self.toggle_switch.setCheckable(True)
-        self.toggle_switch.clicked.connect(self.toggle_requested.emit)
-        self.toggle_switch.setStyleSheet(TOGGLE_STYLE_OFF)
-        config_layout.addWidget(self.toggle_switch, 7, 2)
+        self.status_label = QLabel(CONNECTION_STATES["NOT_CONFIGURED"])
+
+        # Layout para o status label para alinhar com o toggle
+        status_layout = QVBoxLayout()
+        status_layout.setContentsMargins(0, 0, 0, 0)
+        status_layout.addItem(
+            QSpacerItem(0, 20, QSizePolicy.Minimum, QSizePolicy.Fixed)
+        )
+        status_layout.addWidget(self.status_label)
+        status_layout.setAlignment(Qt.AlignTop)
+        config_layout.addLayout(status_layout, 7, 1)
+
+        self.toggle_switch = ToggleSwitchButton(width=55, height=25)  # Tamanho ajustado
+        self.toggle_switch.stateChanged.connect(self._on_toggle_state_changed)
+
+        # Criar um layout vertical para o toggle com margem superior
+        toggle_layout = QVBoxLayout()
+        toggle_layout.setContentsMargins(0, 0, 0, 0)  # Remover margens do layout
+        toggle_layout.addItem(
+            QSpacerItem(0, 20, QSizePolicy.Minimum, QSizePolicy.Fixed)
+        )
+        toggle_layout.addWidget(self.toggle_switch)
+        toggle_layout.setAlignment(Qt.AlignTop)  # Alinhar ao topo
+
+        config_layout.addLayout(toggle_layout, 7, 2)
+
+        # Adicionar um QSpacerItem para empurrar os elementos para cima
+        config_layout.addItem(
+            QSpacerItem(0, 0, QSizePolicy.Minimum, QSizePolicy.Expanding), 8, 0, 1, 3
+        )
 
         self.setLayout(config_layout)
 
     def _on_connection_changed(self, conn_name):
         self.connection_changed.emit(conn_name)
+
+    def _on_toggle_state_changed(self, state):
+        """Lida com a mudança de estado do toggle switch, mas só emite o sinal
+        se não estiver em um estado de transição."""
+        # Somente emitir o sinal se não estiver em estado de transição
+        if not hasattr(
+            self.toggle_switch, "_current_state"
+        ) or self.toggle_switch._current_state not in ["CONNECTING", "DISCONNECTING"]:
+            self.toggle_requested.emit(state)
 
     def update_connection_details(
         self, conn_name, config_file_path, server_addr, conn_details
@@ -82,7 +119,12 @@ class ConnectionConfigWidget(QGroupBox):
         self.server_address_label.setText(server_addr)
         self.config_file_label.setText(config_file_path)
         # Procurar por diferentes possíveis campos de autenticação
-        auth_type = conn_details.get("authby") or conn_details.get("leftauth") or conn_details.get("rightauth") or "--"
+        auth_type = (
+            conn_details.get("authby")
+            or conn_details.get("leftauth")
+            or conn_details.get("rightauth")
+            or "--"
+        )
         self.auth_type_label.setText(auth_type)
         protocols = f"{conn_details.get('ike', '--')}/{conn_details.get('esp', '--')}"
         self.protocols_label.setText(protocols)
@@ -100,17 +142,21 @@ class ConnectionConfigWidget(QGroupBox):
 
     def update_status(self, status, is_connected):
         self.status_label.setText(status)
-        self.toggle_switch.setChecked(is_connected)
-        self.toggle_switch.setText("ON" if is_connected else "OFF")
-        if (
-            status == CONNECTION_STATES["CONNECTING"]
-            or status == CONNECTION_STATES["DISCONNECTING"]
-        ):
-            self.toggle_switch.setStyleSheet(TOGGLE_STYLE_CONNECTING)
+        # O ToggleSwitch gerencia seu próprio estado e estilo
+        if status == CONNECTION_STATES["CONNECTED"] or status == "Conectado":
+            self.toggle_switch.setConnectionState("CONNECTED")
+        elif status == CONNECTION_STATES["DISCONNECTED"] or status == "Desconectado":
+            self.toggle_switch.setConnectionState("DISCONNECTED")
+        elif (
+            CONNECTION_STATES["CONNECTING"] in status or status == "Conectando"
+        ):  # Adicionando suporte para o status retornado pelo IPsec Commander
+            self.toggle_switch.setConnectionState("CONNECTING")
+        elif status == "Não configurado":
+            self.toggle_switch.setConnectionState(
+                "DISCONNECTED"
+            )  # Tratar como desconectado se não estiver configurado
         else:
-            self.toggle_switch.setStyleSheet(
-                TOGGLE_STYLE_ON if is_connected else TOGGLE_STYLE_OFF
-            )
+            self.toggle_switch.setConnectionState("DISCONNECTED")  # Estado padrão
 
     def set_error_state(self, message):
         self.conn_selector.clear()
@@ -121,6 +167,6 @@ class ConnectionConfigWidget(QGroupBox):
         self.protocols_label.setText("N/A")
         self.rightsubnet_label.setText("N/A")
         self.status_label.setText(CONNECTION_STATES["ERROR"])
-        self.toggle_switch.setChecked(False)
-        self.toggle_switch.setText("OFF")
-        self.toggle_switch.setStyleSheet(TOGGLE_STYLE_OFF)
+        self.toggle_switch.setConnectionState(
+            "DISCONNECTED"
+        )  # Em caso de erro, o switch deve estar desligado

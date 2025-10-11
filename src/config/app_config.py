@@ -13,11 +13,6 @@ WINDOW_SIZE = (500, 650)
 os.environ["QT_QPA_PLATFORM"] = "xcb"
 
 # --- UI Styles (CSS) ---
-TOGGLE_STYLE_ON = "QPushButton { background-color: green; color: white; font-weight: bold; border-radius: 10px; min-width: 60px; padding: 5px; }"
-TOGGLE_STYLE_OFF = "QPushButton { background-color: red; color: white; font-weight: bold; border-radius: 10px; min-width: 60px; padding: 5px; }"
-TOGGLE_STYLE_CONNECTING = "QPushButton { background-color: orange; color: white; font-weight: bold; border-radius: 10px; min-width: 60px; padding: 5px; }"
-
-# --- Connection States ---
 CONNECTION_STATES = {
     "CONNECTED": "Connected",
     "DISCONNECTED": "Disconnected",
@@ -42,7 +37,9 @@ DEFAULT_MESSAGES = {
 IPSEC_CONFIG_PATHS = ["/etc/ipsec.conf"]
 IPSEC_D_PATH = "/etc/ipsec.d/"
 
-# --- Log Directory ---
-LOGS_DIR = os.path.expanduser("~/.vpn_ipsec_logs")
-if not os.path.exists(LOGS_DIR):
-    os.makedirs(LOGS_DIR)
+# --- Log File ---
+# Usar um único arquivo de log organizado dentro de ~/.vpnlogs/
+LOGS_DIR = os.path.expanduser("~/.vpnlogs")
+os.makedirs(LOGS_DIR, mode=0o755, exist_ok=True)
+
+LOG_FILE_PATH = os.path.join(LOGS_DIR, "vpn_ipsec_client.log")

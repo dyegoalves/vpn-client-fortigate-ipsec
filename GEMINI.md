@@ -5,7 +5,8 @@
 * Responda sempre em PT-BR
 * Seja um programador python com foco software desktop no linux
 * Faca um sempre plano TODO para se direcionar
-* Salve logs resumido do que foi feita em cada acao na pasta lgos_ai com timestamp-slug-logs.md
+* Salve logs resumido do que foi feita em cada acao na pasta na raiz do projeto logs_ai com timestamp-slug-logs.md
+* Se falhar a edicao ou busca de arquivo faca com MCP Fileystem
 
 ## Descrição
 

@@ -37,9 +37,11 @@ class IPsecConfigParser:
         Extrai todos os pares chave=valor de uma string de conteúdo de seção.
         """
         details = {}
-        pattern = r"^\s*([a-zA-Z0-9_-]+)\s*=\s*([^#\n]+)"
+        # Regex para capturar chave, valor e opcionalmente ignorar comentários na mesma linha
+        pattern = r"^\s*([a-zA-Z0-9_-]+)\s*=\s*(.*?)(?:\s*#.*)?$"
         for line in section_content.splitlines():
-            if re.match(r"^\s*#", line):
+            # Ignora linhas que são apenas comentários ou vazias
+            if not line.strip() or line.strip().startswith("#"):
                 continue
 
             match = re.search(pattern, line)
@@ -86,20 +88,27 @@ class IPsecConfigParser:
         try:
             with open(config_file, "r") as f:
                 content = f.read()
-
-            pattern = (
-                rf"^\s*conn\s+{re.escape(conn_name)}\s*\n(.*?)(?=\n\s*conn\s+|\Z)"
-            )
+            # Regex para capturar a seção da conexão, incluindo linhas com 'left', 'right', etc.
+            # e parando antes da próxima declaração 'conn' ou do final do arquivo.
+            pattern = rf"^\s*conn\s+{re.escape(conn_name)}\s*\n((?:\s*[^\n]*\n)*?)(?=\n\s*conn\s+|\Z)"
             matches = re.search(pattern, content, re.DOTALL | re.MULTILINE)
-
             if matches:
                 conn_section = matches.group(1)
                 details = self._parse_key_value_pairs_from_section(conn_section)
-
                 details["config_file"] = config_file
                 details["conn_name"] = conn_name
+            else:
+                details["error"] = (
+                    f"Conexão '{conn_name}' não encontrada no arquivo '{config_file}'."
+                )
+        except FileNotFoundError:
+            details["error"] = (
+                f"Erro: Arquivo de configuração '{config_file}' não encontrado."
+            )
         except Exception as e:
-            details["error"] = f"Error reading connection details: {str(e)}"
+            details["error"] = (
+                f"Erro ao ler detalhes da conexão do arquivo '{config_file}': {str(e)}"
+            )
         return details
 
     def get_server_address_from_details(self, connection_details: dict) -> str:

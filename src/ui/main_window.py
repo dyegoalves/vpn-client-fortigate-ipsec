@@ -27,12 +27,9 @@ from PySide6.QtGui import QFont, QPalette, QColor, QIcon
 from ..ipsec.ipsec_manager import IPsecManager
 from ..loggers.app_loggers import AppLoggers
 from ..config.app_config import (
+    CONNECTION_STATES,
     APP_TITLE,
     WINDOW_SIZE,
-    TOGGLE_STYLE_ON,
-    TOGGLE_STYLE_OFF,
-    TOGGLE_STYLE_CONNECTING,
-    CONNECTION_STATES,
     DEFAULT_MESSAGES,
 )
 from .connection_config_widget import ConnectionConfigWidget
@@ -99,6 +96,15 @@ class MainWindow(QMainWindow):
 
         self.load_ipsec_config()
         self.apply_system_theme()
+        
+        # Iniciar um timer para verificar periodicamente o status da conexão
+        self.status_timer = QTimer()
+        self.status_timer.timeout.connect(self.refresh_connection_status_if_needed)
+        self.status_timer.start(5000)  # Atualizar a cada 5 segundos
+        
+        # Adicionar controle de tempo para evitar chamadas muito frequentes
+        import time
+        self._last_refresh_time = time.time()
 
     # ... (All other methods from VPNIPSecClientApp are the same)
     def load_ipsec_config(self):
@@ -148,12 +154,25 @@ class MainWindow(QMainWindow):
         ]:
             return
 
+        # Evitar atualizações muito frequentes
+        import time
+        current_time = time.time()
+        # Verificar se o atributo existe, senão inicializar
+        if not hasattr(self, '_last_refresh_time'):
+            self._last_refresh_time = current_time - 2  # Definir um valor antigo para permitir a primeira atualização
+            
+        if current_time - self._last_refresh_time < 1:  # No mínimo 1 segundo entre atualizações
+            return
+        self._last_refresh_time = current_time
+
         status, is_connected = self.connection_manager.get_connection_status(
             self.current_conn_name
         )
         self.config_widget.update_status(status, is_connected)
 
+        # Verificar se houve mudança no estado de conexão
         if is_connected and not self.is_connected:
+            # Mudança para conectado
             self.is_connected = True
             self.log_manager.set_connection_status(True)
             self.log_manager.create_log_file(self.current_conn_name)
@@ -162,6 +181,7 @@ class MainWindow(QMainWindow):
                 show_in_ui=True,
             )
         elif not is_connected and self.is_connected:
+            # Mudança para desconectado
             self.is_connected = False
             self.log_manager.set_connection_status(False)
             self.log_manager.delete_log_file()
@@ -169,7 +189,7 @@ class MainWindow(QMainWindow):
                 f"Disconnected from {self.current_conn_name}.", show_in_ui=True
             )
 
-    def toggle_connection(self):
+    def toggle_connection(self, is_checked: bool):
         """Alterna a conexão IPsec entre ON/OFF."""
         if not self.current_conn_name or self.current_conn_name in [
             "No configurations found",
@@ -179,12 +199,38 @@ class MainWindow(QMainWindow):
             QMessageBox.critical(
                 self, "Error", "No IPsec configuration available to connect."
             )
+            # Resetar o toggle switch para o estado anterior se houver um erro
+            QTimer.singleShot(100, lambda: self.config_widget.update_status(CONNECTION_STATES["DISCONNECTED"], False))
             return
 
-        if self.config_widget.toggle_switch.isChecked():
-            self.config_widget.update_status(CONNECTION_STATES["CONNECTING"], True)
+        if is_checked:
+            # Verificar se já está conectando ou conectado para evitar ações duplicadas
+            current_status, _ = self.connection_manager.get_connection_status(
+                self.current_conn_name
+            )
+            if current_status == CONNECTION_STATES["CONNECTING"]:
+                # Já está tentando conectar, não fazer nada
+                return
+            elif current_status == CONNECTION_STATES["CONNECTED"]:
+                # Se já está conectado, atualizar o status para refletir o estado correto
+                QTimer.singleShot(100, lambda: self.config_widget.update_status(CONNECTION_STATES["CONNECTED"], True))
+                return
+
+            self.config_widget.update_status(CONNECTION_STATES["CONNECTING"], False)
             self.connect_vpn()
         else:
+            # Verificar se já está desconectando ou desconectado
+            current_status, _ = self.connection_manager.get_connection_status(
+                self.current_conn_name
+            )
+            if current_status == CONNECTION_STATES["DISCONNECTING"]:
+                # Já está tentando desconectar, não fazer nada
+                return
+            elif current_status == CONNECTION_STATES["DISCONNECTED"]:
+                # Se já está desconectado, atualizar o status para refletir o estado correto
+                QTimer.singleShot(100, lambda: self.config_widget.update_status(CONNECTION_STATES["DISCONNECTED"], False))
+                return
+
             self.config_widget.update_status(CONNECTION_STATES["DISCONNECTING"], False)
             self.disconnect_vpn()
 
@@ -198,11 +244,17 @@ class MainWindow(QMainWindow):
         success, message = self.connection_manager.connect_connection(
             self.current_conn_name
         )
+        self.add_status_message(message, show_in_ui=True)
+        
         if success:
-            QTimer.singleShot(2000, self.refresh_connection_status)
+            # Aguardar um tempo menor e verificar o status mais vezes para feedback mais rápido
+            # Atualizar status após a tentativa de conexão
+            QTimer.singleShot(1500, self.refresh_connection_status)  # Verificar após 1.5 segundos
+            QTimer.singleShot(4000, self.refresh_connection_status)  # Verificar novamente após 4 segundos
         else:
-            self.add_status_message(message, show_in_ui=True)
-            self.config_widget.update_status(CONNECTION_STATES["DISCONNECTED"], False)
+            # Em caso de falha, restaurar o estado do toggle para DISCONNECTED
+            # Usar uma chamada adiada para evitar conflitos durante a transição
+            QTimer.singleShot(100, lambda: self.config_widget.update_status(CONNECTION_STATES["DISCONNECTED"], False))
 
     def disconnect_vpn(self):
         """Desconecta do servidor VPN usando IPsec."""
@@ -215,10 +267,16 @@ class MainWindow(QMainWindow):
         success, message = self.connection_manager.disconnect_connection(
             self.current_conn_name
         )
+        self.add_status_message(message, show_in_ui=True)
+        
         if success:
-            self.config_widget.update_status(CONNECTION_STATES["DISCONNECTED"], False)
+            # Verificar status com um intervalo adequado
+            QTimer.singleShot(1500, self.refresh_connection_status)  # Verificar após 1.5 segundos
+            QTimer.singleShot(4000, self.refresh_connection_status)  # Verificar novamente após 4 segundos
         else:
-            self.add_status_message(message, show_in_ui=True)
+            # Em caso de falha, atualizar o status para refletir o estado real
+            # Usar uma chamada adiada para evitar conflitos durante a transição
+            QTimer.singleShot(100, self.refresh_connection_status)
 
     def clear_logs(self):
         """Limpa o display de logs."""
@@ -276,6 +334,34 @@ class MainWindow(QMainWindow):
 
         if show_in_ui:
             self.status_log_widget.add_message(message)
+
+    def refresh_connection_status_if_needed(self):
+        """Atualiza o status da conexão se não estiver em estado de transição."""
+        if not self.current_conn_name:
+            return
+            
+        # Evitar atualizações muito frequentes
+        import time
+        current_time = time.time()
+        # Verificar se o atributo existe, senão inicializar
+        if not hasattr(self, '_last_refresh_time'):
+            self._last_refresh_time = current_time - 2  # Definir um valor antigo para permitir a primeira atualização
+            
+        if current_time - self._last_refresh_time < 1:  # No mínimo 1 segundo entre atualizações
+            return
+        self._last_refresh_time = current_time
+            
+        # Obter o status atual da conexão
+        status, is_connected = self.connection_manager.get_connection_status(
+            self.current_conn_name
+        )
+        
+        # Atualizar apenas se não estiver em estado de transição (CONNECTING/DISCONNECTING)
+        # Levando em consideração os status retornados em português também
+        if status not in [CONNECTION_STATES["CONNECTING"], CONNECTION_STATES["DISCONNECTING"], "Conectando"]:
+            # Só atualizar o widget de status, mas não executar ações de logging/mensagem
+            # que já são tratadas em connect_vpn/disconnect_vpn
+            self.config_widget.update_status(status, is_connected)
 
     def center_window(self):
         """Centraliza a janela na tela."""

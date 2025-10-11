@@ -13,11 +13,6 @@ WINDOW_SIZE = (500, 650)
 os.environ["QT_QPA_PLATFORM"] = "xcb"
 
 # --- UI Styles (CSS) ---
-TOGGLE_STYLE_ON = "QPushButton { background-color: green; color: white; font-weight: bold; border-radius: 10px; min-width: 60px; padding: 5px; }"
-TOGGLE_STYLE_OFF = "QPushButton { background-color: red; color: white; font-weight: bold; border-radius: 10px; min-width: 60px; padding: 5px; }"
-TOGGLE_STYLE_CONNECTING = "QPushButton { background-color: orange; color: white; font-weight: bold; border-radius: 10px; min-width: 60px; padding: 5px; }"
-
-# --- Connection States ---
 CONNECTION_STATES = {
     "CONNECTED": "Connected",
     "DISCONNECTED": "Disconnected",

@@ -57,16 +57,41 @@ class ConnectionConfigWidget(QGroupBox):
         self.rightsubnet_label = QLabel("--")
         config_layout.addWidget(self.rightsubnet_label, 6, 1, 1, 2)
 
-        config_layout.addWidget(QLabel("Status:"), 7, 0)
-        self.status_label = QLabel(CONNECTION_STATES["NOT_CONFIGURED"])
-        config_layout.addWidget(self.status_label, 7, 1)
+        # Layout para o título do status para alinhamento
+        status_title_layout = QVBoxLayout()
+        status_title_layout.setContentsMargins(0, 0, 0, 0)
+        status_title_layout.addItem(
+            QSpacerItem(0, 20, QSizePolicy.Minimum, QSizePolicy.Fixed)
+        )
+        status_title_layout.addWidget(QLabel("Status:"))
+        status_title_layout.setAlignment(Qt.AlignTop)
+        config_layout.addLayout(status_title_layout, 7, 0)
 
-        self.toggle_switch = ToggleSwitchButton(
-            width=72, height=36
-        )  # Configurar com tamanho adequado
-        # Conectar diretamente ao evento stateChanged para ter mais controle
+        self.status_label = QLabel(CONNECTION_STATES["NOT_CONFIGURED"])
+
+        # Layout para o status label para alinhar com o toggle
+        status_layout = QVBoxLayout()
+        status_layout.setContentsMargins(0, 0, 0, 0)
+        status_layout.addItem(
+            QSpacerItem(0, 20, QSizePolicy.Minimum, QSizePolicy.Fixed)
+        )
+        status_layout.addWidget(self.status_label)
+        status_layout.setAlignment(Qt.AlignTop)
+        config_layout.addLayout(status_layout, 7, 1)
+
+        self.toggle_switch = ToggleSwitchButton(width=55, height=25)  # Tamanho ajustado
         self.toggle_switch.stateChanged.connect(self._on_toggle_state_changed)
-        config_layout.addWidget(self.toggle_switch, 7, 2)
+
+        # Criar um layout vertical para o toggle com margem superior
+        toggle_layout = QVBoxLayout()
+        toggle_layout.setContentsMargins(0, 0, 0, 0)  # Remover margens do layout
+        toggle_layout.addItem(
+            QSpacerItem(0, 20, QSizePolicy.Minimum, QSizePolicy.Fixed)
+        )
+        toggle_layout.addWidget(self.toggle_switch)
+        toggle_layout.setAlignment(Qt.AlignTop)  # Alinhar ao topo
+
+        config_layout.addLayout(toggle_layout, 7, 2)
 
         # Adicionar um QSpacerItem para empurrar os elementos para cima
         config_layout.addItem(
@@ -85,7 +110,7 @@ class ConnectionConfigWidget(QGroupBox):
         if not hasattr(
             self.toggle_switch, "_current_state"
         ) or self.toggle_switch._current_state not in ["CONNECTING", "DISCONNECTING"]:
-            self.toggle_requested.emit(state == Qt.Checked)
+            self.toggle_requested.emit(state)
 
     def update_connection_details(
         self, conn_name, config_file_path, server_addr, conn_details
@@ -126,8 +151,6 @@ class ConnectionConfigWidget(QGroupBox):
             CONNECTION_STATES["CONNECTING"] in status or status == "Conectando"
         ):  # Adicionando suporte para o status retornado pelo IPsec Commander
             self.toggle_switch.setConnectionState("CONNECTING")
-        elif CONNECTION_STATES["DISCONNECTING"] in status:
-            self.toggle_switch.setConnectionState("DISCONNECTING")
         elif status == "Não configurado":
             self.toggle_switch.setConnectionState(
                 "DISCONNECTED"

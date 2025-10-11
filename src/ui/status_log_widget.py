@@ -12,9 +12,8 @@ from PySide6.QtWidgets import (
     QGridLayout,
 )
 from PySide6.QtCore import Qt, Signal
-from PySide6.QtGui import QFont
-
-
+from PySide6.QtGui import QFont, QIcon, QPixmap, QPainter
+from PySide6.QtSvg import QSvgRenderer
 
 
 class StatusLogWidget(QGroupBox):
@@ -35,7 +34,17 @@ class StatusLogWidget(QGroupBox):
 
         log_area_layout.addWidget(self.status_display, 0, 0)
 
-        clear_logs_btn = QPushButton("🗑")
+        clear_logs_btn = QPushButton()
+        icon_path = os.path.join(
+            os.path.dirname(__file__), "..", "assets", "clear_log_icon.svg"
+        )
+        pixmap = QPixmap(18, 18)  # Tamanho do pixmap igual ao tamanho do botão
+        pixmap.fill(Qt.transparent)
+        painter = QPainter(pixmap)
+        svg_renderer = QSvgRenderer(icon_path)
+        svg_renderer.render(painter)
+        painter.end()
+        clear_logs_btn.setIcon(QIcon(pixmap))
         clear_logs_btn.clicked.connect(self.clear_logs_requested.emit)
         clear_logs_btn.setStyleSheet(
             "QPushButton {"
@@ -44,12 +53,12 @@ class StatusLogWidget(QGroupBox):
             "  border-radius: 4px;"
             "  color: #cc0000;"
             "  font-size: 15px;"
-            "  padding: 3px;"
-            "  min-width: 20px;"
-            "  max-width: 20px;"
-            "  min-height: 20px;"
-            "  max-height: 20px;"
-            "  margin: 6px;"
+            "  padding: 4px;"
+            "  min-width: 18px;"
+            "  max-width: 18px;"
+            "  min-height: 18px;"
+            "  max-height: 18px;"
+            "  margin: 10px 20px;"
             "}"
             "QPushButton:hover {"
             "  background-color: rgba(255, 150, 150, 200);"
@@ -60,7 +69,8 @@ class StatusLogWidget(QGroupBox):
             "  background-color: rgba(255, 100, 100, 220);"
             "}"
         )
-        clear_logs_btn.setFixedSize(20, 20)
+        clear_logs_btn.setIconSize(clear_logs_btn.size())
+        clear_logs_btn.setFixedSize(18, 18)
 
         log_area_layout.addWidget(clear_logs_btn, 0, 0, Qt.AlignBottom | Qt.AlignRight)
 

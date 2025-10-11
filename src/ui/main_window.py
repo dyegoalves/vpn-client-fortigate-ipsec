@@ -94,10 +94,6 @@ class MainWindow(QMainWindow):
         buttons_layout.addStretch()
         layout.addLayout(buttons_layout)
 
-        self.status_bar = QStatusBar()
-        self.setStatusBar(self.status_bar)
-        self.status_bar.showMessage(DEFAULT_MESSAGES["READY"])
-
         self.add_status_message(DEFAULT_MESSAGES["INIT"])
         self.add_status_message(DEFAULT_MESSAGES["CHECKING_CONFIG"])
 
@@ -220,7 +216,6 @@ class MainWindow(QMainWindow):
             self.current_conn_name
         )
         if success:
-            self.status_bar.showMessage(CONNECTION_STATES["DISCONNECTED"])
             self.config_widget.update_status(CONNECTION_STATES["DISCONNECTED"], False)
         else:
             self.add_status_message(message, show_in_ui=True)
@@ -276,11 +271,8 @@ class MainWindow(QMainWindow):
 
     def add_status_message(self, message: str, show_in_ui: bool = True):
         """Adiciona uma mensagem ao display de status e ao arquivo de log."""
-        timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-        formatted_message = f"[{timestamp}] {message}"
-
-        # Adiciona mensagem ao sistema de log
-        self.log_manager.add_log_message(formatted_message)
+        # Adiciona mensagem ao sistema de log (o log_manager cuida do timestamp)
+        self.log_manager.add_log_message(message)
 
         if show_in_ui:
             self.status_log_widget.add_message(message)

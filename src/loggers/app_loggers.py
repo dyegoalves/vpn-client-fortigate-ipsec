@@ -8,7 +8,7 @@ de arquivos de log da aplicação VPN IPsec.
 import os
 from datetime import datetime
 
-from ..config.app_config import LOGS_DIR
+from ..config.app_config import LOG_FILE_PATH
 
 
 class AppLoggers:
@@ -17,12 +17,11 @@ class AppLoggers:
     """
 
     def __init__(self):
-        self.log_file_path = None
         self.is_connected = False
-
-        # Garante que o diretório de logs exista
-        if not os.path.exists(LOGS_DIR):
-            os.makedirs(LOGS_DIR)
+        # Garante que o diretório do arquivo de log exista
+        log_dir = os.path.dirname(LOG_FILE_PATH)
+        if log_dir and not os.path.exists(log_dir):
+            os.makedirs(log_dir, mode=0o755, exist_ok=True)
 
     def set_connection_status(self, is_connected: bool):
         """
@@ -32,66 +31,60 @@ class AppLoggers:
 
     def create_log_file(self, connection_name: str):
         """
-        Cria um novo arquivo de log para a conexão atual.
+        Adiciona registro de início de conexão ao arquivo único de log.
         """
         if not connection_name:
             return
 
-        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-        filename = f"{connection_name}_{timestamp}.log"
-        self.log_file_path = os.path.join(LOGS_DIR, filename)
-
         initial_content = (
+            f"\n" + "=" * 50 + f"\n"
             f"VPN IPsec Log - Connection: {connection_name}\n"
             f"Start Time: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n"
-            + "-" * 50
-            + "\n"
+            + "=" * 50 + f"\n"
         )
 
-        if not self._write_to_log_file(initial_content):
-            self.log_file_path = None
+        self._write_to_log_file(initial_content)
 
     def delete_log_file(self):
         """
-        Fecha e registra o fim do arquivo de log quando a conexão é encerrada.
+        Adiciona registro de fim de conexão ao arquivo único de log.
         """
-        if self.log_file_path and os.path.exists(self.log_file_path):
-            final_content = (
-                "-" * 50
-                + "\n"
-                + f"End Time: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n"
-            )
+        final_content = (
+            "=" * 50 + f"\n"
+            f"End Time: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n"
+            f"Connection ended.\n"
+            + "=" * 50 + f"\n"
+        )
 
-            self._write_to_log_file(final_content)
-        self.log_file_path = None
+        self._write_to_log_file(final_content)
 
     def _write_to_log_file(self, content: str) -> bool:
         """
-        Escreve conteúdo no arquivo de log se estiver conectado.
+        Escreve conteúdo no arquivo único de log.
         """
-        if self.is_connected and self.log_file_path:
-            try:
-                with open(self.log_file_path, "a", encoding="utf-8") as log_file:
-                    log_file.write(content)
-                return True
-            except Exception:
-                return False
-        return False
+        try:
+            with open(LOG_FILE_PATH, "a", encoding="utf-8") as log_file:
+                log_file.write(content)
+            return True
+        except Exception as e:
+            print(f"Error writing to log file: {e}")
+            return False
 
     def add_log_message(self, message: str) -> bool:
         """
         Adiciona uma mensagem ao arquivo de log com timestamp.
         """
-        if not self.is_connected:
-            return False
-
         timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-        formatted_message = f"[{timestamp}] {message}"
+        # Removendo duplicação de timestamp adicionado pelo sistema de UI
+        if message.startswith('[') and ']' in message[:20]:  # Verificar se a mensagem já contém timestamp
+            formatted_message = f"{message}"
+        else:
+            formatted_message = f"[{timestamp}] {message}"
 
         return self._write_to_log_file(formatted_message + "\n")
 
     def get_log_file_path(self) -> str:
         """
-        Retorna o caminho do arquivo de log atual.
+        Retorna o caminho do arquivo de log único.
         """
-        return self.log_file_path
+        return LOG_FILE_PATH

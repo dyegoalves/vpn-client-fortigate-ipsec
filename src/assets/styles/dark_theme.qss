@@ -55,53 +55,7 @@ QPushButton:disabled {
     border: 1px solid #444444;
 }
 
-QComboBox {
-    background-color: #4a4a4a;
-    border: 1px solid #555555;
-    border-radius: 4px;
-    padding: 3px 10px 3px 3px;  /* Reduzindo o padding para melhor aparência */
-    color: #ffffff;
-    min-height: 18px;
-    min-width: 150px;  /* Largura mínima para manter consistência */
-    max-width: 300px;  /* Largura máxima para evitar expansão excessiva */
-}
 
-QComboBox:hover {
-    background-color: #5a5a5a;
-    border: 1px solid #666666;
-}
-
-QComboBox::drop-down {
-    subcontrol-origin: padding;
-    subcontrol-position: top right;
-    width: 20px;
-    border-left: 1px solid #555555;
-    border-top-right-radius: 2px;
-    border-bottom-right-radius: 2px;
-}
-
-QComboBox::down-arrow {
-    /* Não definir imagem para usar o padrão do sistema */
-}
-
-/* Estilo para o QComboBox quando está em modo de foco */
-QComboBox:focus {
-    border: 1px solid #666666;
-    outline: none;
-}
-
-/* Removendo a referência a ícone SVG que foi substituído pelo comportamento padrão do Qt */
-/* O Qt usará o ícone padrão do sistema para o combobox */
-
-QComboBox QAbstractItemView {
-    background-color: #2d2d2d;
-    border: 1px solid #555555;
-    selection-background-color: #4a4a4a;
-    selection-color: #ffffff;
-    color: #ffffff;
-    outline: none;
-    padding: 2px;
-}
 
 QLineEdit {
     background-color: #4a4a4a;

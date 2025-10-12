@@ -34,6 +34,7 @@ from ..config.app_config import (
 )
 from .connection_config_widget import ConnectionConfigWidget
 from .status_log_widget import StatusLogWidget
+from ..utils.system_theme import get_system_color_scheme # Importar a nova função
 
 
 class MainWindow(QMainWindow):
@@ -95,7 +96,6 @@ class MainWindow(QMainWindow):
         self.add_status_message(DEFAULT_MESSAGES["CHECKING_CONFIG"])
 
         self.load_ipsec_config()
-        self.apply_system_theme()
         
         # Iniciar um timer para verificar periodicamente o status da conexão
         self.status_timer = QTimer()
@@ -105,6 +105,12 @@ class MainWindow(QMainWindow):
         # Adicionar controle de tempo para evitar chamadas muito frequentes
         import time
         self._last_refresh_time = time.time()
+
+        # Iniciar um timer para verificar periodicamente o tema do sistema
+        self.theme_timer = QTimer()
+        self.theme_timer.timeout.connect(self.update_theme)
+        self.theme_timer.start(10000)  # Verificar a cada 10 segundos
+        self.current_app_theme = get_system_color_scheme() # Armazenar o tema atual do app
 
     # ... (All other methods from VPNIPSecClientApp are the same)
     def load_ipsec_config(self):
@@ -269,50 +275,7 @@ class MainWindow(QMainWindow):
         """Limpa o display de logs."""
         self.status_log_widget.clear_display()
 
-    def apply_system_theme(self):
-        """Detecta e aplica o tema do sistema (claro/escuro) para o aplicativo."""
-        system_palette = self.style().standardPalette()
-        window_color = system_palette.color(QPalette.ColorRole.Window)
-        luminance = (
-            0.299 * window_color.red()
-            + 0.587 * window_color.green()
-            + 0.114 * window_color.blue()
-        ) / 255
-        if luminance < 0.5:
-            self.set_dark_theme()
 
-    def set_dark_theme(self):
-        """Aplica um tema escuro ao aplicativo."""
-        dark_palette = QPalette()
-        dark_palette.setColor(QPalette.ColorRole.Window, QColor(45, 45, 45))
-        dark_palette.setColor(QPalette.ColorRole.WindowText, QColor(220, 220, 220))
-        dark_palette.setColor(QPalette.ColorRole.Base, QColor(25, 25, 25))
-        dark_palette.setColor(QPalette.ColorRole.AlternateBase, QColor(40, 40, 40))
-        dark_palette.setColor(QPalette.ColorRole.ToolTipBase, QColor(45, 45, 45))
-        dark_palette.setColor(QPalette.ColorRole.ToolTipText, QColor(220, 220, 220))
-        dark_palette.setColor(QPalette.ColorRole.Text, QColor(220, 220, 220))
-        dark_palette.setColor(QPalette.ColorRole.Button, QColor(45, 45, 45))
-        dark_palette.setColor(QPalette.ColorRole.ButtonText, QColor(220, 220, 220))
-        dark_palette.setColor(QPalette.ColorRole.BrightText, QColor(240, 240, 240))
-        dark_palette.setColor(QPalette.ColorRole.Highlight, QColor(65, 105, 225))
-        dark_palette.setColor(QPalette.ColorRole.HighlightedText, QColor(240, 240, 240))
-        dark_palette.setColor(
-            QPalette.ColorRole.Disabled, QPalette.ColorRole.Text, QColor(120, 120, 120)
-        )
-        dark_palette.setColor(
-            QPalette.ColorRole.Disabled,
-            QPalette.ColorRole.ButtonText,
-            QColor(120, 120, 120),
-        )
-        dark_palette.setColor(
-            QPalette.ColorRole.Disabled,
-            QPalette.ColorRole.WindowText,
-            QColor(120, 120, 120),
-        )
-        self.setPalette(dark_palette)
-        app = QApplication.instance()
-        if app:
-            app.setPalette(dark_palette)
 
     def add_status_message(self, message: str, show_in_ui: bool = True):
         """Adiciona uma mensagem ao display de status e ao arquivo de log."""
@@ -356,3 +319,22 @@ class MainWindow(QMainWindow):
         center_point = self.screen().availableGeometry().center()
         window_geometry.moveCenter(center_point)
         self.move(window_geometry.topLeft())
+
+    def update_theme(self):
+        """Verifica o tema do sistema e aplica o stylesheet correspondente."""
+        current_system_theme = darkdetect.theme()
+        if current_system_theme != self.current_app_theme:
+            self.current_app_theme = current_system_theme
+            app = QApplication.instance()
+            if app:
+                script_dir = os.path.dirname(os.path.realpath(__file__))
+                if current_system_theme == "Dark":
+                    style_path = os.path.join(script_dir, "..", "assets", "styles", "dark_theme.qss")
+                else:
+                    style_path = os.path.join(script_dir, "..", "assets", "styles", "light_theme.qss")
+                
+                if os.path.exists(style_path):
+                    with open(style_path, "r") as f:
+                        app.setStyleSheet(f.read())
+                else:
+                    print(f"WARNING: Stylesheet not found: {style_path}")

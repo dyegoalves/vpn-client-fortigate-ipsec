@@ -35,6 +35,7 @@ from ..config.app_config import (
 from .connection_config_widget import ConnectionConfigWidget
 from .status_log_widget import StatusLogWidget
 from ..utils.system_theme import get_system_color_scheme # Importar a nova função
+from .theme_selector import ThemeSelectorWidget
 
 
 class MainWindow(QMainWindow):
@@ -106,11 +107,23 @@ class MainWindow(QMainWindow):
         import time
         self._last_refresh_time = time.time()
 
-        # Iniciar um timer para verificar periodicamente o tema do sistema
+        # Criar o seletor de tema e adicionar à interface
+        self.theme_selector = ThemeSelectorWidget()
+        # Conectar o sinal de mudança de tema
+        self.theme_selector.theme_changed.connect(self.handle_theme_change)
+        
+        # Adicionar o seletor de tema ao layout principal
+        layout.addWidget(self.theme_selector)
+        
+        # Iniciar um timer para verificar periodicamente o tema do sistema (quando em modo automático)
         self.theme_timer = QTimer()
         self.theme_timer.timeout.connect(self.update_theme)
         self.theme_timer.start(10000)  # Verificar a cada 10 segundos
         self.current_app_theme = get_system_color_scheme() # Armazenar o tema atual do app
+        
+        # Definir o tema inicial como automático
+        self.current_manual_theme = None
+        self.theme_selector.set_selected_theme("auto")
 
     # ... (All other methods from VPNIPSecClientApp are the same)
     def load_ipsec_config(self):
@@ -321,20 +334,49 @@ class MainWindow(QMainWindow):
         self.move(window_geometry.topLeft())
 
     def update_theme(self):
-        """Verifica o tema do sistema e aplica o stylesheet correspondente."""
-        current_system_theme = darkdetect.theme()
+        """Verifica o tema do sistema e aplica o stylesheet correspondente.
+        Este método é chamado periodicamente quando o modo automático está ativo."""
+        # Apenas atualizar automaticamente se estiver no modo automático
+        if self.theme_selector.get_selected_theme() != "auto":
+            return
+            
+        current_system_theme = get_system_color_scheme()
         if current_system_theme != self.current_app_theme:
             self.current_app_theme = current_system_theme
-            app = QApplication.instance()
-            if app:
-                script_dir = os.path.dirname(os.path.realpath(__file__))
-                if current_system_theme == "Dark":
-                    style_path = os.path.join(script_dir, "..", "assets", "styles", "dark_theme.qss")
-                else:
-                    style_path = os.path.join(script_dir, "..", "assets", "styles", "light_theme.qss")
-                
-                if os.path.exists(style_path):
-                    with open(style_path, "r") as f:
-                        app.setStyleSheet(f.read())
-                else:
-                    print(f"WARNING: Stylesheet not found: {style_path}")
+            self.apply_theme(current_system_theme)
+
+    def handle_theme_change(self, theme: str):
+        """Lida com a mudança de tema selecionada pelo usuário no dropdown."""
+        if theme == "auto":
+            # Voltar ao modo automático
+            self.current_app_theme = get_system_color_scheme()
+            self.apply_theme(self.current_app_theme)
+            self.add_status_message("Tema alterado para automático (segue o tema do sistema)", show_in_ui=True)
+        elif theme == "dark":
+            self.apply_theme("Dark")
+            self.add_status_message("Tema alterado para escuro", show_in_ui=True)
+        elif theme == "light":
+            self.apply_theme("Light")
+            self.add_status_message("Tema alterado para claro", show_in_ui=True)
+            
+        # Atualizar a referência do tema atual para o manual
+        if theme != "auto":
+            self.current_manual_theme = theme.capitalize() if theme != "auto" else None
+        else:
+            self.current_manual_theme = None
+
+    def apply_theme(self, theme: str):
+        """Aplica o tema especificado."""
+        app = QApplication.instance()
+        if app:
+            script_dir = os.path.dirname(os.path.realpath(__file__))
+            if theme.lower() == "dark":
+                style_path = os.path.join(script_dir, "..", "assets", "styles", "dark_theme.qss")
+            else:
+                style_path = os.path.join(script_dir, "..", "assets", "styles", "light_theme.qss")
+            
+            if os.path.exists(style_path):
+                with open(style_path, "r") as f:
+                    app.setStyleSheet(f.read())
+            else:
+                print(f"WARNING: Stylesheet not found: {style_path}")

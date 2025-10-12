@@ -8,32 +8,34 @@ from PySide6.QtWidgets import (
     QLabel,
     QPushButton,
     QTextEdit,
-    QGroupBox,
-    QGridLayout,
+    QFrame,
 )
 from PySide6.QtCore import Qt, Signal
 from PySide6.QtGui import QFont, QIcon, QPixmap, QPainter
 from PySide6.QtSvg import QSvgRenderer
 
 
-class StatusLogWidget(QGroupBox):
+class StatusLogWidget(QWidget):
     clear_logs_requested = Signal()
 
     def __init__(self, parent=None):
-        super().__init__("Status da Conexão e Logs", parent)
+        super().__init__(parent)
         self.initUI()
 
     def initUI(self):
-        status_layout = QVBoxLayout()
-
-        log_area_layout = QGridLayout()
-
-        self.status_display = QTextEdit()
-        self.status_display.setReadOnly(True)
-        self.status_display.setMaximumHeight(150)
-
-        log_area_layout.addWidget(self.status_display, 0, 0)
-
+        # Layout principal vertical
+        main_layout = QVBoxLayout()
+        
+        # Criar layout horizontal para o título e o botão de limpar logs
+        title_layout = QHBoxLayout()
+        
+        # Título do grupo
+        title_label = QLabel("Status da Conexão e Logs")
+        font = QFont()
+        font.setBold(True)
+        title_label.setFont(font)
+        
+        # Botão de limpar logs
         clear_logs_btn = QPushButton()
         icon_path = os.path.join(
             os.path.dirname(__file__), "..", "assets", "clear_log_icon.svg"
@@ -58,7 +60,7 @@ class StatusLogWidget(QGroupBox):
             "  max-width: 18px;"
             "  min-height: 18px;"
             "  max-height: 18px;"
-            "  margin: 10px 20px;"
+            "  margin: 0 0 0 10px;"  # Espaçamento à esquerda
             "}"
             "QPushButton:hover {"
             "  background-color: rgba(255, 150, 150, 200);"
@@ -71,11 +73,26 @@ class StatusLogWidget(QGroupBox):
         )
         clear_logs_btn.setIconSize(clear_logs_btn.size())
         clear_logs_btn.setFixedSize(18, 18)
+        
+        title_layout.addWidget(title_label)
+        title_layout.addStretch()  # Adiciona um espaçamento expansível
+        title_layout.addWidget(clear_logs_btn)
+        
+        # Adiciona o layout do título ao layout principal
+        main_layout.addLayout(title_layout)
+        
+        # Área de exibição de logs com borda para simular o grupo
+        self.status_display = QTextEdit()
+        self.status_display.setReadOnly(True)
+        self.status_display.setMaximumHeight(150)
+        self.status_display.setFrameStyle(QFrame.StyledPanel | QFrame.Sunken)
+        # Adiciona um pequeno espaçamento à direita para evitar sobreposição do scrollbar
+        self.status_display.setViewportMargins(0, 0, 10, 0)
 
-        log_area_layout.addWidget(clear_logs_btn, 0, 0, Qt.AlignBottom | Qt.AlignRight)
-
-        status_layout.addLayout(log_area_layout)
-        self.setLayout(status_layout)
+        main_layout.addWidget(self.status_display)
+        
+        # Define o layout principal para o widget
+        self.setLayout(main_layout)
 
     def add_message(self, message: str):
         if not self._is_routine_status_message(message):

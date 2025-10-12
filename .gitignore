@@ -1,2 +1,7 @@
 *.pyc
 logs_ai/*
+appimage_env
+*.AppImage
+# Diretório de empacotamento AppImage
+packaging/appimage/appimagetool.AppImage
+packaging/appimage/AppDir/

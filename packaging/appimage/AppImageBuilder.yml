@@ -1,0 +1,79 @@
+# AppImageBuilder recipe for VPN IPsec Client
+
+version: 1
+script:
+  # Preparar o ambiente
+  - rm -rf AppDir
+  - mkdir -p AppDir/usr/bin
+  - mkdir -p AppDir/usr/lib
+  - mkdir -p AppDir/usr/share/applications
+  - mkdir -p AppDir/usr/share/icons/hicolor/256x256/apps
+  - mkdir -p AppDir/usr/share/icons/hicolor/scalable/apps
+
+  # Copiar arquivos do projeto
+  - cp -r src AppDir/usr/bin/
+  - cp main.py AppDir/usr/bin/
+  - cp requirements.txt AppDir/usr/bin/
+
+  # Criar desktop file
+  - |
+    cat > AppDir/usr/share/applications/VPN-IPsec-Client.desktop << EOF
+    [Desktop Entry]
+    Name=VPN IPsec Client
+    Exec=VPN-IPsec-Client
+    Type=Application
+    Icon=vpn-ipsec-client
+    Categories=Network;
+    Terminal=false
+    Comment=Cliente VPN IPsec para Linux
+    EOF
+
+  # Criar ícone temporário (substitua com o ícone real se disponível)
+  - |
+    echo '<svg xmlns="http://www.w3.org/2000/svg" width="256" height="256" viewBox="0 0 100 100"><rect width="100" height="100" fill="#3498db"/><text x="50" y="55" font-family="Arial" font-size="40" fill="white" text-anchor="middle">VPN</text></svg>' > AppDir/usr/share/icons/hicolor/scalable/apps/vpn-ipsec-client.svg
+  - cp AppDir/usr/share/icons/hicolor/scalable/apps/vpn-ipsec-client.svg AppDir/vpn-ipsec-client.svg
+
+AppDir:
+  path: ./AppDir
+  app_info:
+    id: VPN-IPsec-Client
+    name: VPN IPsec Client
+    icon: vpn-ipsec-client
+    version: '0.2.0'
+    exec: usr/bin/VPN-IPsec-Client
+    exec_args: $@
+  
+  apt:
+    arch: amd64
+    sources:
+      - sourceline: 'deb [arch=amd64] http://archive.ubuntu.com/ubuntu/ jammy main restricted universe multiverse'
+        key_url: 'http://keyserver.ubuntu.com/pks/lookup?op=get&search=0x3b4fe6acc0b21f32'
+  
+    include:
+      - python3
+      - python3-pip
+      - python3-venv
+      - libxcb-cursor0
+    exclude:
+      - humanity-icon-theme
+      - hicolor-icon-theme
+  
+  runtime:
+    env:
+      # Define o ambiente Python
+      - |
+        PYTHONPATH="${APPDIR}/usr/lib/python3.10/site-packages:${PYTHONPATH}"
+  
+  files:
+    exclude:
+      - usr/share/man
+      - usr/share/doc/*/README.*
+      - usr/share/doc/*/changelog.*
+      - usr/share/doc/*/NEWS.*
+      - usr/share/doc/*/TODO.*
+
+# Build settings
+AppImage:
+  arch: x86_64
+  update-information: None
+  sign-key: None

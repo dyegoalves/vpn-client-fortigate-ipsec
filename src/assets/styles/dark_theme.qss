@@ -1,24 +1,213 @@
 /* Dark Theme */
 QMainWindow {
-    background-color: #333333;
-    color: #f0f0f0;
+    background-color: #2d2d2d;
+    color: #ffffff;
+    border: 1px solid #444444;
 }
+
+QWidget {
+    background-color: #2d2d2d;
+    color: #ffffff;
+}
+
 QLabel {
-    color: #f0f0f0;
+    color: #ffffff;
+    background-color: transparent;
 }
+
+QGroupBox {
+    border: 1px solid #444444;
+    border-radius: 5px;
+    margin-top: 1ex;
+    font-weight: bold;
+    color: #cccccc;
+    padding: 3px;
+}
+
+QGroupBox::title {
+    subcontrol-origin: margin;
+    left: 10px;
+    padding: 0 5px 0 5px;
+}
+
 QPushButton {
-    background-color: #555555;
-    color: #f0f0f0;
-    border: 1px solid #777777;
-    padding: 5px;
-    border-radius: 3px;
+    background-color: #4a4a4a;
+    color: #ffffff;
+    border: 1px solid #555555;
+    padding: 6px 12px;
+    border-radius: 4px;
+    font-weight: normal;
 }
+
 QPushButton:hover {
-    background-color: #666666;
+    background-color: #5a5a5a;
+    border: 1px solid #666666;
 }
+
+QPushButton:pressed {
+    background-color: #3a3a3a;
+    border: 1px solid #444444;
+}
+
+QPushButton:disabled {
+    background-color: #3a3a3a;
+    color: #888888;
+    border: 1px solid #444444;
+}
+
+
+
+QLineEdit {
+    background-color: #4a4a4a;
+    border: 1px solid #555555;
+    border-radius: 4px;
+    padding: 5px;
+    color: #ffffff;
+}
+
+QLineEdit:focus {
+    border: 1px solid #666666;
+}
+
 QTextEdit {
     background-color: #222222;
-    color: #f0f0f0;
+    color: #ffffff;
     border: 1px solid #555555;
+    border-radius: 4px;
+    padding: 5px;
+    selection-background-color: #4a4a4a;
+    selection-color: #ffffff;
 }
-/* Adicione mais estilos para outros widgets conforme necessário */
+
+QScrollBar:vertical {
+    background-color: #3a3a3a;
+    width: 15px;
+    border-radius: 4px;
+}
+
+QScrollBar::handle:vertical {
+    background-color: #5a5a5a;
+    border-radius: 4px;
+    min-height: 20px;
+}
+
+QScrollBar::handle:vertical:hover {
+    background-color: #6a6a6a;
+}
+
+QScrollBar:horizontal {
+    background-color: #3a3a3a;
+    height: 15px;
+    border-radius: 4px;
+}
+
+QScrollBar::handle:horizontal {
+    background-color: #5a5a5a;
+    border-radius: 4px;
+    min-width: 10px;
+}
+
+QScrollBar::handle:horizontal:hover {
+    background-color: #6a6a6a;
+}
+
+QStatusBar {
+    background-color: #2d2d2d;
+    color: #cccccc;
+    border-top: 1px solid #444444;
+}
+
+QStatusBar QLabel {
+    color: #cccccc;
+}
+
+QCheckBox {
+    color: #ffffff;
+    spacing: 5px;
+}
+
+QCheckBox::indicator {
+    width: 16px;
+    height: 16px;
+}
+
+QCheckBox::indicator:unchecked {
+    background-color: #4a4a4a;
+    border: 1px solid #555555;
+    border-radius: 3px;
+}
+
+QCheckBox::indicator:checked {
+    background-color: #4cd964;
+    border: 1px solid #555555;
+    border-radius: 3px;
+}
+
+QCheckBox::indicator:checked::hover {
+    background-color: #5de579;
+}
+
+QProgressBar {
+    border: 1px solid #555555;
+    background-color: #3a3a3a;
+    border-radius: 4px;
+    text-align: center;
+    color: #ffffff;
+}
+
+QProgressBar::chunk {
+    background-color: #4cd964;
+    border-radius: 3px;
+}
+
+/* Estilo específico para o StatusLogWidget */
+StatusLogWidget {
+    background-color: #2d2d2d;
+    border: 1px solid #444444;
+    border-radius: 5px;
+}
+
+/* Estilo específico para o ConnectionConfigWidget */
+ConnectionConfigWidget {
+    background-color: #2d2d2d;
+    border: 1px solid #444444;
+    border-radius: 5px;
+    padding: 10px;
+}
+
+/* Ajustes para o ToggleSwitchButton */
+ToggleSwitchButton {
+    background-color: transparent;
+    border: none;
+}
+
+/* Estilo para QTabWidget se existir */
+QTabWidget::pane {
+    border: 1px solid #444444;
+    background-color: #2d2d2d;
+}
+
+QTabBar::tab {
+    background-color: #4a4a4a;
+    color: #ffffff;
+    padding: 6px 12px;
+    border: 1px solid #555555;
+    border-bottom: none;
+    border-top-left-radius: 4px;
+    border-top-right-radius: 4px;
+}
+
+QTabBar::tab:selected {
+    background-color: #2d2d2d;
+    border-bottom: 2px solid #2d2d2d;
+    color: #ffffff;
+}
+
+QTabBar::tab:!selected {
+    background-color: #4a4a4a;
+    color: #cccccc;
+}
+
+QTabBar::tab:hover {
+    background-color: #5a5a5a;
+}

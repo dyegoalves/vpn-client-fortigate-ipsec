@@ -27,10 +27,20 @@ class ConnectionConfigWidget(QGroupBox):
 
     def initUI(self):
         config_layout = QGridLayout()
+        
+        # Definir proporções das colunas para melhor responsividade
+        config_layout.setColumnStretch(0, 1)  # Coluna 0 (labels) ocupa 1 parte
+        config_layout.setColumnStretch(1, 2)  # Coluna 1 (valores) ocupa 2 partes
+        config_layout.setColumnStretch(2, 0)  # Coluna 2 (toggle) não se expande
 
         config_layout.addWidget(QLabel("Conexão IPsec:"), 0, 0)
         self.conn_selector = QComboBox()
         self.conn_selector.currentTextChanged.connect(self._on_connection_changed)
+        # Definir política de tamanho para o QComboBox
+        self.conn_selector.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
+        # Definir tamanho mínimo para garantir consistência
+        self.conn_selector.setMinimumWidth(150)
+        self.conn_selector.setMaximumWidth(300)
         config_layout.addWidget(self.conn_selector, 0, 1, 1, 2)
 
         config_layout.addWidget(QLabel("Nome da Conexão:"), 1, 0)

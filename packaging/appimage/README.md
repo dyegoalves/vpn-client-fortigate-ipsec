@@ -37,6 +37,11 @@ O AppImage resultante será nomeado `VPN-IPsec-Client-<version>-x86_64.AppImage`
 - Python 3.6+
 - pip
 - wget ou curl
+- PySide6
+- configparser
+- cryptography
+- strongswan (para funcionalidades de VPN)
+- libstrongswan-extra-plugins (para funcionalidades de VPN)
 
 ## Notas
 

@@ -7,20 +7,24 @@ script:
   - mkdir -p AppDir/usr/bin
   - mkdir -p AppDir/usr/lib
   - mkdir -p AppDir/usr/share/applications
-  - mkdir -p AppDir/usr/share/icons/hicolor/256x256/apps
   - mkdir -p AppDir/usr/share/icons/hicolor/scalable/apps
 
   # Copiar arquivos do projeto
   - cp -r src AppDir/usr/bin/
   - cp main.py AppDir/usr/bin/
-  - cp requirements.txt AppDir/usr/bin/
+
+  # Instalar dependências de produção
+  - python3 -m venv AppDir/usr/bin/venv
+  - . AppDir/usr/bin/venv/bin/activate
+  - pip install --no-cache-dir PySide6==6.6.0 psutil==5.9.0 configparser==6.0.0 cryptography==41.0.0
+  - deactivate
 
   # Criar desktop file
   - |
     cat > AppDir/usr/share/applications/VPN-IPsec-Client.desktop << EOF
     [Desktop Entry]
     Name=VPN IPsec Client
-    Exec=VPN-IPsec-Client
+    Exec=vpn-ipsec-client-launcher
     Type=Application
     Icon=vpn-ipsec-client
     Categories=Network;
@@ -28,10 +32,21 @@ script:
     Comment=Cliente VPN IPsec para Linux
     EOF
 
-  # Criar ícone temporário (substitua com o ícone real se disponível)
+  # Copiar ícone real do projeto
+  - cp src/assets/icon.svg AppDir/usr/share/icons/hicolor/scalable/apps/vpn-ipsec-client.svg
+  - cp src/assets/icon.svg AppDir/vpn-ipsec-client.svg
+
+  # Criar script de inicialização
   - |
-    echo '<svg xmlns="http://www.w3.org/2000/svg" width="256" height="256" viewBox="0 0 100 100"><rect width="100" height="100" fill="#3498db"/><text x="50" y="55" font-family="Arial" font-size="40" fill="white" text-anchor="middle">VPN</text></svg>' > AppDir/usr/share/icons/hicolor/scalable/apps/vpn-ipsec-client.svg
-  - cp AppDir/usr/share/icons/hicolor/scalable/apps/vpn-ipsec-client.svg AppDir/vpn-ipsec-client.svg
+    cat > AppDir/usr/bin/vpn-ipsec-client-launcher << 'EOF'
+    #!/bin/bash
+    HERE="$(dirname "$(readlink -f "${0}")")"
+    export PATH="$HERE/venv/bin:$PATH"
+    export PYTHONPATH="$HERE/venv/lib/python3.10/site-packages:$PYTHONPATH"
+    cd "$HERE"
+    python3 main.py
+    EOF
+  - chmod +x AppDir/usr/bin/vpn-ipsec-client-launcher
 
 AppDir:
   path: ./AppDir
@@ -40,7 +55,7 @@ AppDir:
     name: VPN IPsec Client
     icon: vpn-ipsec-client
     version: '0.2.0'
-    exec: usr/bin/VPN-IPsec-Client
+    exec: usr/bin/vpn-ipsec-client-launcher
     exec_args: $@
   
   apt:
@@ -60,9 +75,8 @@ AppDir:
   
   runtime:
     env:
-      # Define o ambiente Python
-      - |
-        PYTHONPATH="${APPDIR}/usr/lib/python3.10/site-packages:${PYTHONPATH}"
+      # O ambiente é configurado no script de inicialização
+      - 'VIRTUAL_ENV=/usr/bin/venv'
   
   files:
     exclude:

@@ -1,7 +1,16 @@
 *.pyc
 logs_ai/*
 appimage_env
+AppDir
 *.AppImage
+appimagetool.AppImage
+*.deb
+tmp
+
 # Diretório de empacotamento AppImage
 packaging/appimage/appimagetool.AppImage
 packaging/appimage/AppDir/
+
+# Diretório de empacotamento Debian
+packaging/deb/*.deb
+packaging/deb/tmp

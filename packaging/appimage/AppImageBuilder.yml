@@ -54,7 +54,7 @@ AppDir:
     id: VPN-IPsec-Client
     name: VPN IPsec Client
     icon: vpn-ipsec-client
-    version: '0.2.0'
+    version: '0.3.0'
     exec: usr/bin/vpn-ipsec-client-launcher
     exec_args: $@
   

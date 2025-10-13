@@ -6,7 +6,7 @@ set -e  # Sair se qualquer comando falhar
 
 # Definir variáveis
 APP_NAME="vpn-ipsec-client"
-APP_VERSION="0.3.0"
+APP_VERSION="0.4.0"
 APP_MAINTAINER="VPN IPsec Client Team"
 APP_DESCRIPTION="Cliente VPN IPsec para Linux com interface gráfica. Uma aplicação para gerenciar conexões VPN IPsec com uma interface gráfica amigável e integrada ao ambiente Linux."
 DEBIAN_PACKAGE_NAME="${APP_NAME}_${APP_VERSION}_amd64.deb"

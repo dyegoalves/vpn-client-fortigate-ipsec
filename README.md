@@ -2,9 +2,7 @@
 
 Uma aplicação com interface gráfica para gerenciar conexões VPN IPsec em sistemas Linux, construída com Qt (PySide6). Esta aplicação oferece uma interface intuitiva para conectar, desconectar e monitorar conexões VPN IPsec, com excelente integração com ambientes de desktop Linux como o Deepin.
 
-## Descrição
 
-Este projeto implementa um cliente VPN IPsec com interface gráfica para sistemas Linux, com foco especial em integração com o ambiente desktop Deepin. O aplicativo permite gerenciar conexões IPsec VPN com um toggle switch intuitivo que mostra o status da conexão.
 
 ## Funcionalidades
 
@@ -72,7 +70,7 @@ Para que a aplicação possa gerenciar suas conexões VPN, é necessário config
 
 ### Exemplo de `ipsec.conf`
 
-Você pode usar o arquivo `ipsec.conf.example` localizado na pasta `logs_ai` do projeto como base para suas configurações. Este arquivo demonstra uma configuração básica para uma conexão VPN.
+O exemplo a seguir demonstra uma configuração básica para uma conexão VPN IPsec no arquivo `/etc/ipsec.conf`:
 
 ```
 config setup
@@ -186,6 +184,48 @@ A aplicação se integra com comandos IPsec de nível de sistema (`ipsec up/down
 - Toggle switch com codificação de cores (vermelho para desconectado, verde para conectado)
 - Registro baseado em arquivo que só salva quando conectado
 - Saída de log visual reduzida na interface, conforme solicitado
+
+## Empacotamento
+
+A aplicação pode ser empacotada em diferentes formatos para distribuição através de um menu interativo:
+
+```bash
+# Executar o menu interativo de empacotamento
+./packaging/menu_build.sh
+```
+
+O script apresentará um menu com as seguintes opções:
+
+```
+=============================================
+  Menu de Empacotamento - VPN IPsec Client
+=============================================
+  Selecione o formato do pacote:
+
+  1) AppImage   - Cria um AppImage executável
+  2) Deb        - Cria um pacote .deb
+  3) Todos      - Cria todos os pacotes
+
+  4) Sair
+=============================================
+Digite sua escolha [1-4]:
+```
+
+### Formatos de Empacotamento
+
+#### AppImage
+- Formato portátil que não requer instalação
+- Pode ser executado em qualquer sistema Linux x86_64
+- Contém todos os recursos necessários
+
+#### Pacote Debian (.deb)
+- Formato para distribuições baseadas em Debian/Ubuntu
+- Instalação através do sistema de pacotes
+- Gerencia dependências automaticamente
+
+#### Todos
+- Executa todos os tipos de empacotamento em sequência
+- Gera tanto o AppImage quanto o pacote .deb
 
 ## Status
 

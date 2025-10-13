@@ -380,3 +380,21 @@ class MainWindow(QMainWindow):
                     app.setStyleSheet(f.read())
             else:
                 print(f"WARNING: Stylesheet not found: {style_path}")
+
+    def closeEvent(self, event):
+        """Lida com o evento de fechamento da janela, desconectando a VPN se estiver conectada."""
+        if self.is_connected and self.current_conn_name:
+            # Desconecta automaticamente a VPN ao fechar o aplicativo
+            self.add_status_message(f"Desconectando IPsec connection: {self.current_conn_name} antes de sair...", show_in_ui=True)
+            success, message = self.connection_manager.disconnect_connection(self.current_conn_name)
+            self.add_status_message(message, show_in_ui=True)
+            
+            if success:
+                self.add_status_message(f"VPN '{self.current_conn_name}' desconectada com sucesso antes de sair.", show_in_ui=True)
+                event.accept()  # Aceita o evento de fechamento
+            else:
+                # Mesmo se falhar, permitir o fechamento do aplicativo
+                self.add_status_message(f"Falha ao desconectar VPN '{self.current_conn_name}' antes de sair, mas aplicativo será fechado: {message}", show_in_ui=True)
+                event.accept()  # Aceita o evento de fechamento
+        else:
+            event.accept()  # Se não estiver conectado, apenas fecha o app
